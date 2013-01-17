@@ -1,0 +1,15 @@
+production:
+  database: &common
+    host: 'localhost'
+    un:   'root'
+    pw:   ''
+    db:   'pibid'
+
+test:
+  database:
+    <<: *common
+    db: 'pibid_test'
+
+development:
+  database:
+    <<: *common

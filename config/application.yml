@@ -1,0 +1,14 @@
+development: &common
+  courier:
+    enabled:  true
+    from:     'noreply@pibibot.com'
+
+production:
+  <<: *common
+
+test:
+  courier:
+    enabled: false
+  credentials:
+    cookie:
+      secret: 'adooken'

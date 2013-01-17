@@ -1,0 +1,167 @@
+GIT
+  remote: https://github.com/amireh/timetastic
+  revision: 085f7572cc0ca9cb30af249c21e6fd80e59fa205
+  specs:
+    timetastic (0.1.4)
+
+GIT
+  remote: https://github.com/sinatra/sinatra
+  revision: eed4f71f4ff5a70f43c803fa6787920e9d01218b
+  specs:
+    sinatra (1.4.0)
+      rack (~> 1.4)
+      rack-protection (~> 1.3)
+      tilt (~> 1.3, >= 1.3.3)
+
+GIT
+  remote: https://github.com/sinatra/sinatra-contrib
+  revision: 86c85007860bbaf596092547e7902ff5e0a07698
+  specs:
+    sinatra-contrib (1.4.0)
+      backports (>= 2.0)
+      eventmachine
+      rack-protection
+      rack-test
+      sinatra (~> 1.4.0)
+      tilt (~> 1.3)
+
+GEM
+  remote: http://rubygems.org/
+  specs:
+    addressable (2.2.8)
+    backports (2.6.7)
+    bcrypt-ruby (3.0.1)
+    daemons (1.1.9)
+    data_objects (0.10.10)
+      addressable (~> 2.1)
+    diff-lcs (1.1.3)
+    dm-constraints (1.2.0)
+      dm-core (~> 1.2.0)
+    dm-core (1.2.0)
+      addressable (~> 2.2.6)
+    dm-do-adapter (1.2.0)
+      data_objects (~> 0.10.6)
+      dm-core (~> 1.2.0)
+    dm-migrations (1.2.0)
+      dm-core (~> 1.2.0)
+    dm-mysql-adapter (1.2.0)
+      dm-do-adapter (~> 1.2.0)
+      do_mysql (~> 0.10.6)
+    dm-serializer (1.2.2)
+      dm-core (~> 1.2.0)
+      fastercsv (~> 1.5)
+      json (~> 1.6)
+      json_pure (~> 1.6)
+      multi_json (~> 1.0)
+    dm-types (1.2.2)
+      bcrypt-ruby (~> 3.0)
+      dm-core (~> 1.2.0)
+      fastercsv (~> 1.5)
+      json (~> 1.6)
+      multi_json (~> 1.0)
+      stringex (~> 1.4)
+      uuidtools (~> 2.1)
+    dm-validations (1.2.0)
+      dm-core (~> 1.2.0)
+    do_mysql (0.10.10)
+      data_objects (= 0.10.10)
+    eventmachine (1.0.0)
+    faraday (0.8.4)
+      multipart-post (~> 1.1)
+    fastercsv (1.5.5)
+    hashie (1.2.0)
+    httpauth (0.2.0)
+    i18n (0.6.1)
+    json (1.7.5)
+    json_pure (1.7.5)
+    jwt (0.1.5)
+      multi_json (>= 1.0)
+    macaddr (1.6.1)
+      systemu (~> 2.5.0)
+    mail (2.5.3)
+      i18n (>= 0.4.0)
+      mime-types (~> 1.16)
+      treetop (~> 1.4.8)
+    mime-types (1.19)
+    multi_json (1.5.0)
+    multipart-post (1.1.5)
+    mysql (2.9.0)
+    oauth2 (0.8.0)
+      faraday (~> 0.8)
+      httpauth (~> 0.1)
+      jwt (~> 0.1.4)
+      multi_json (~> 1.0)
+      rack (~> 1.2)
+    omniauth (1.1.1)
+      hashie (~> 1.2)
+      rack
+    omniauth-facebook (1.4.1)
+      omniauth-oauth2 (~> 1.1.0)
+    omniauth-github (1.0.3)
+      omniauth (~> 1.0)
+      omniauth-oauth2 (~> 1.1)
+    omniauth-google-oauth2 (0.1.13)
+      omniauth (~> 1.0)
+      omniauth-oauth2
+    omniauth-oauth2 (1.1.1)
+      oauth2 (~> 0.8.0)
+      omniauth (~> 1.0)
+    polyglot (0.3.3)
+    pony (1.4)
+      mail (> 2.0)
+    rack (1.4.1)
+    rack-protection (1.3.2)
+      rack
+    rack-test (0.6.2)
+      rack (>= 1.0)
+    rake (10.0.3)
+    rspec (2.12.0)
+      rspec-core (~> 2.12.0)
+      rspec-expectations (~> 2.12.0)
+      rspec-mocks (~> 2.12.0)
+    rspec-core (2.12.2)
+    rspec-expectations (2.12.1)
+      diff-lcs (~> 1.1.3)
+    rspec-mocks (2.12.1)
+    stringex (1.5.1)
+    systemu (2.5.2)
+    thin (1.5.0)
+      daemons (>= 1.0.9)
+      eventmachine (>= 0.12.6)
+      rack (>= 1.0.0)
+    tilt (1.3.3)
+    treetop (1.4.12)
+      polyglot
+      polyglot (>= 0.3.1)
+    uuid (2.3.6)
+      macaddr (~> 1.0)
+    uuidtools (2.1.3)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  addressable
+  dm-constraints (>= 1.2.0)
+  dm-core (>= 1.2.0)
+  dm-migrations (>= 1.2.0)
+  dm-mysql-adapter (>= 1.2.0)
+  dm-serializer (>= 1.2.0)
+  dm-types (>= 1.2.0)
+  dm-validations (>= 1.2.0)
+  json
+  multi_json
+  mysql
+  omniauth
+  omniauth-facebook
+  omniauth-github
+  omniauth-google-oauth2
+  pony
+  rake
+  rspec
+  rspec-core
+  sinatra (= 1.4.0)!
+  sinatra-contrib!
+  thin
+  timetastic (>= 0.1.4)!
+  uuid

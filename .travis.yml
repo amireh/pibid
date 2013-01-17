@@ -1,0 +1,16 @@
+language: ruby
+rvm:
+  - "1.9.3"
+services: mysql
+notifications:
+  irc: "irc.freenode.net#algollabs"
+before_install:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sudo apt-get install libqt4-dev libqtwebkit-dev
+before_script:
+  - mysql -e 'create database pibi_test'
+  - RACK_ENV=test bundle exec rake db:setup
+  - RACK_ENV=test bundle exec rake pibi:currencies
+script:
+  - "export DISPLAY=:99.0 && export RACK_ENV=test && bundle exec rspec spec"
