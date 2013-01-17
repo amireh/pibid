@@ -59,17 +59,15 @@ end # Sinatra
 
 
 post '/users', auth: :guest do
-  u = build_user_from_pibi
-  if !u.valid? || !u.save || !u.saved?
-    flash[:error] = u.all_errors
-    return redirect '/users/new'
+  @u = build_user_from_pibi
+
+  unless @u.save
+    halt 400, @u.all_errors
   end
 
-  flash[:notice] = "Welcome to #{AppName}! Your new personal account has been registered."
+  authorize(@u)
 
-  authorize(u)
-
-  redirect '/'
+  200
 end
 
 delete '/users/links/:provider', auth: :user do |provider|

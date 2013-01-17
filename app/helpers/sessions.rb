@@ -25,9 +25,10 @@ module Sinatra
 
       if roles.include?(:guest)
         if logged_in?
-          flash[:warning] = "You're already logged in."
-          redirect '/', 303
+          halt 403, 'Already logged in.'
         end
+
+        return true
       end
 
       if roles.include? :user || roles.include?(:admin)

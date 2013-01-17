@@ -27,6 +27,8 @@ gem 'omniauth-facebook'
 gem 'omniauth-github'
 # gem 'omniauth-twitter', '0.0.9'
 gem 'omniauth-google-oauth2'
+gem 'rabl'
+gem 'yajl-ruby'
 
 group :development do
   gem 'thin'
