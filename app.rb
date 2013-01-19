@@ -39,6 +39,10 @@ configure do
 
   DataMapper.finalize
   DataMapper.auto_upgrade! unless $DB_BOOTSTRAPPING
+
+  Rabl.register!
+
+  set :views, File.join($ROOT, 'app', 'views')
 end
 
 # skip OmniAuth and Pony in test mode

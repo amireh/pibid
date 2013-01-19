@@ -138,4 +138,12 @@ def mockup_user(q = {})
   User.destroy
   @user     = @u = User.create(mockup_user_params.merge(q))
   @account  = @a = @user.accounts.first
+
+  @user.saved?
+end
+
+def sign_in()
+  raise RuntimeError.new('Must create a mockup user before signing in') unless @user
+  rc = prc post '/sessions', { email: @user.email, password: @some_salt }
+  rc.resp.status.should == 200
 end

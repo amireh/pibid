@@ -12,7 +12,11 @@ route_namespace '/users/:user_id/payment_methods' do
   end
 
   post do
-    # TODO: migrate from user_settings
+    unless pm = @user.payment_methods.create({ name: params[:payment_method][:name] })
+      halt 400, pm.all_errors
+    end
+
+    200 # TODO: return the object
   end
 
   put '/:id' do |pm_id|

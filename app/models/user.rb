@@ -19,13 +19,13 @@ class User
 
   property :email_verified, Boolean, default: false
   property :gravatar_email, String, length: 255, format: :email_address, default: lambda { |r,_| r.email }
-  property :settings,       Text, default: "{}"
+  # property :settings,       Text, default: "{}"
   property :oauth_token,    Text
   property :oauth_secret,   Text
   property :extra,          Text
   property :auto_password,  Boolean, default: false
   property :created_at,     DateTime, default: lambda { |*_| DateTime.now }
-  property :is_admin,       Boolean, default: false
+  # property :is_admin,       Boolean, default: false
   # property :is_public,      Boolean, default: false
 
   belongs_to :link, self, :child_key => [ :link_id ], :required => false
