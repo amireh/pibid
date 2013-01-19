@@ -3,16 +3,12 @@ route_namespace '/sessions' do
   post do
     restrict_to(:guest)
 
-    unless u = User.first({
-      email: params[:email],
-      provider: 'pibi',
-      password: User.encrypt(params[:password]) })
-      flash[:error] = "Incorrect email or password, please try again."
-      return redirect '/sessions/new'
+    unless u = authenticate(params[:email], params[:password])
+      halt 401
     end
 
     authorize(u)
-    # TODO: status
+    200
   end
 
   delete do

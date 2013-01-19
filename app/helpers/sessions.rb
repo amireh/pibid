@@ -6,14 +6,14 @@ module Sinatra
     }
 
     def logged_in?
-      !current_user.nil?
-    end
-
-    def restricted
-      unless logged_in?
-        flash[:error] = Messages[:unauthorized]
-        redirect "/", 303
+      @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+      if @auth.provided? && @auth.basic? && @auth.credentials
+        if u = authenticate(@auth.credentials.first, @auth.credentials.last)
+          authorize(u)
+        end
       end
+
+      !current_user.nil?
     end
 
     def restricted!(scope = nil)
@@ -80,6 +80,14 @@ module Sinatra
       # end
 
       @account ||= current_user.accounts.first
+    end
+
+    def authenticate(email, pw)
+      User.first({
+        email:    email,
+        provider: 'pibi',
+        password: User.encrypt(pw)
+      })
     end
 
     def authorize(user)

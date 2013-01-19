@@ -62,26 +62,73 @@ post '/users', auth: :guest do
   @u = build_user_from_pibi
 
   unless @u.save
-    halt 400, @u.all_errors
+    halt 400, @u.report_errors
   end
 
   authorize(@u)
 
-  200
+  @u.to_json
 end
 
-delete '/users/links/:provider', auth: :user do |provider|
-
-  if u = current_user.linked_to?(provider)
-    if u.detach_from_master
-      flash[:notice] = "Your current account is no longer linked to the #{provider_name(provider)} one" +
-                       " with the email '#{u.email}'."
-    else
-      flash[:error] = "Unable to unlink accounts: #{u.all_errors}"
-    end
-  else
-    flash[:error] = "Your current account is not linked to a #{provider_name(provider)} one!"
+route_namespace '/users/:user_id' do
+  condition do
+    restrict_to(:user, with: { id: params[:user_id].to_i })
   end
 
-  redirect '/settings/account'
+  get do
+    rabl :"users/show", format: "json"
+  end
+
+  put do
+    updatable_params = accept_params([ :name, :email, :gravatar_email ], @user)
+    if params.has_key?('password') && params[:password][:current]
+      if User.encrypt(params[:password][:current]) != @user.password
+        @user.errors.add(:password, "Invalid current password")
+        halt 400, @user.report_errors
+      elsif params[:password][:new].length < 7
+        @user.errors.add(:password, 'Password is too short! It must be at least 7 characters long.')
+        halt 400, @user.report_errors
+      else
+
+        if params[:password][:new] != params[:password][:current]
+          updatable_params[:password]               = User.encrypt(params[:password][:new])
+          updatable_params[:password_confirmation]  = User.encrypt(params[:password][:confirmation])
+        end
+      end
+    end
+
+    unless @user.update(updatable_params)
+      halt 400, @user.report_errors
+    end
+
+    if updatable_params.has_key?(:password)
+      @user.pending_notices({ type: 'password' }).each { |n| n.accept! }
+    end
+
+    rabl :"users/show", format: "json"
+  end
+
+  put '/account' do
+    # update the account default currency
+    if @account.currency != params[:currency]
+      if @account.update({ currency: params[:currency] })
+        notices << "The default account currency now is '#{@account.currency}'"
+      else
+        errors << @account.all_errors
+      end
+    end
+  end
+
+  delete '/links/:provider' do |provider|
+    unless linked_user = @user.linked_to?(provider)
+      halt 400, "That account is not linked to a #{provider_name(provider)} one."
+    end
+
+    unless linked_user.detach_from_master
+      halt 500, linked_user.report_errors
+    end
+
+    200
+  end
+
 end
