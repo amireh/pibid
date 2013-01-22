@@ -59,28 +59,35 @@ end # Sinatra
 
 
 post '/users', auth: :guest do
-  @u = build_user_from_pibi
+  @user = build_user_from_pibi
 
-  unless @u.save
-    halt 400, @u.report_errors
+  unless @user.save
+    halt 400, @user.report_errors
   end
 
-  authorize(@u)
+  authorize(@user)
 
-  @u.to_json
+  rabl :"users/show"
 end
 
 route_namespace '/users/:user_id' do
-  condition do
+  before do
     restrict_to(:user, with: { id: params[:user_id].to_i })
   end
 
-  get do
-    rabl :"users/show", format: "json"
+  get :provides => [ :json ] do
+    rabl :"users/show"
   end
 
-  put do
+  # Accepts:
+  # => name: String
+  # => email: String
+  # => gravatar_email: String
+  # => password: { :current, :new, :confirmation }
+  # => currency: String
+  put :provides => [ :json ] do
     updatable_params = accept_params([ :name, :email, :gravatar_email ], @user)
+
     if params.has_key?('password') && params[:password][:current]
       if User.encrypt(params[:password][:current]) != @user.password
         @user.errors.add(:password, "Invalid current password")
@@ -101,22 +108,23 @@ route_namespace '/users/:user_id' do
       halt 400, @user.report_errors
     end
 
+    # the account default currency
+    if params.has_key?('currency')
+      if current_account.currency != params[:currency]
+        unless current_account.update({ currency: params[:currency] })
+          halt 400, @account.all_errors
+        end
+      end
+    end
+
+    # remove the "temp-password" status and notifications (if any)
+    # if the user has updated their password
     if updatable_params.has_key?(:password)
       @user.pending_notices({ type: 'password' }).each { |n| n.accept! }
     end
 
-    rabl :"users/show", format: "json"
-  end
-
-  put '/account' do
-    # update the account default currency
-    if @account.currency != params[:currency]
-      if @account.update({ currency: params[:currency] })
-        notices << "The default account currency now is '#{@account.currency}'"
-      else
-        errors << @account.all_errors
-      end
-    end
+    status 200
+    rabl :"users/show"
   end
 
   delete '/links/:provider' do |provider|
@@ -128,7 +136,7 @@ route_namespace '/users/:user_id' do
       halt 500, linked_user.report_errors
     end
 
-    200
+    204
   end
 
 end

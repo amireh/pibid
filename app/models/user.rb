@@ -65,6 +65,10 @@ class User
     end
   end
 
+  def account
+    self.accounts.first
+  end
+
   def create_default_pm()
     self.payment_methods.first_or_create({ name: "Cash", default: true })
   end

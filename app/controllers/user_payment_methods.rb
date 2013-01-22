@@ -1,31 +1,42 @@
 route_namespace '/users/:user_id/payment_methods' do
-  condition do
+  before do
     restrict_to(:user, with: { id: params[:user_id].to_i })
   end
 
-  get '/:id' do |pm_id|
-    unless pm = @user.payment_methods.get(pm_id.to_i)
-      halt 400, 'No such payment method.'
+  get '/:id', :provides => [ :json ] do |_, pm_id|
+    unless @pm = @user.payment_methods.get(pm_id.to_i)
+      halt 404, 'No such payment method.'
     end
 
-    pm
+    rabl :"users/payment_methods/show"
   end
 
-  post do
-    unless pm = @user.payment_methods.create({ name: params[:payment_method][:name] })
-      halt 400, pm.all_errors
+  post :provides => [ :json ] do
+    p = {
+      name: params[:name],
+      color: params[:color],
+      default: params[:default]
+    }
+
+    if params[:default]
+      @user.payment_method.update({ default: false })
     end
 
-    200 # TODO: return the object
+    unless @pm = @user.payment_methods.create(p)
+      halt 400, @pm.report_errors
+    end
+
+    status 204
+    rabl :"users/payment_methods/show"
   end
 
-  put '/:id' do |pm_id|
+  put '/:id', :provides => [ :json ] do |pm_id|
     # TODO: migrate from user_settings
   end
 
-  delete '/:id' do |pm_id|
+  delete '/:id', :provides => [ :json ] do |pm_id|
     unless pm = @user.payment_methods.get(pm_id.to_i)
-      halt 400, "No such payment method '#{pm_id}'."
+      halt 404, "No such payment method."
     end
 
     notices = []
