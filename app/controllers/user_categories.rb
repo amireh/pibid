@@ -1,66 +1,52 @@
 route_namespace '/users/:user_id/categories' do
-  condition do
+  before do
     restrict_to(:user, with: { id: params[:user_id].to_i })
   end
 
-  get '/:id' do |cid|
-    unless @c = current_user.categories.first({id: cid})
-      error 404, "No such category"
-    end
-
-    erb :"categories/show"
-  end
-
-  get '/:id/edit' do |cid|
-    unless @c = current_user.categories.first({id: cid})
-      halt 404, "No such category"
-    end
-
-    erb :"categories/edit"
-  end
-
   post do
-    c = @user.categories.create({
-      name: params["name"].to_s
-    })
-
-    if c.saved?
-      flash[:notice] = "Category '#{c.name}' created."
-    else
-      flash[:error]  = c.all_errors
+    unless @c = @category = @user.categories.create({ name: params["name"].to_s })
+      halt 400, @c.report_errors
     end
 
-    redirect back
+    rabl :"categories/show"
   end
 
-  put '/:id' do |cid|
-    unless c = @user.categories.get(cid)
-      halt 400, "No such category"
+  route_namespace '/users/:user_id/categories/:cid' do
+
+    before do
+      restrict_to(:user, with: lambda { |u|
+        return false unless u.id == params[:user_id].to_i
+
+        unless @c = @category = u.categories.get(params[:cid].to_i)
+          halt 404, 'No such category.'
+        end
+
+        true
+      })
     end
 
-    if c.update({ name: params[:name] })
-      flash[:notice] = "Category '#{c.name}' has been updated."
-    else
-      flash[:error] = c.all_errors
+    get :provides => [ :json ] do
+      rabl :"categories/show"
     end
 
-    redirect back
-  end
+    # Accepts:
+    # => name: String
+    put :provides => [ :json ] do
 
-  delete '/:id' do |cid|
-    unless c = @user.categories.get(cid)
-      halt 400, 'No such category'
+      unless @c.update({ name: params[:name] })
+        halt 400, @c.report_errors
+      end
+
+      rabl :"categories/show"
     end
 
-    name = c.name
+    delete :provides => [ :json ] do
+      unless @c.destroy
+        halt 500
+      end
 
-    if c.destroy
-      flash[:notice] = "Category '#{name}' has been removed."
-    else
-      flash[:error] = c.errors
+      200
     end
 
-    redirect '/categories'
-  end
-end
-
+  end # ns: /categories/:category_id
+end # ns: /categories

@@ -2,10 +2,10 @@ before do
   content_type :json
 end
 
-def on_error
+def on_error(msg = response.body)
   status response.status
 
-  { :result => 'error', :message => response.body }.to_json
+  { :result => 'error', :message => msg }.to_json
 end
 
 error do
@@ -16,7 +16,5 @@ end
 #   on_error
 # end
 
-# error 404 do
-#   response.body = "No such resource."
-#   on_error
-# end
+error 404 do on_error "No such resource." end
+error 500 do on_error "Internal Server Error." end

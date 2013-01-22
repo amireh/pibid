@@ -25,4 +25,5 @@ class Category
   end
 
   is :transactable
+
 end
