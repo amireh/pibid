@@ -1,3 +1,5 @@
+# require 'app/models/transaction'
+
 class Transaction; end
 class Recurring < Transaction
   belongs_to :account, required: true

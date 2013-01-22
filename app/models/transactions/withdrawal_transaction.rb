@@ -1,3 +1,5 @@
+# require 'app/models/transaction'
+
 class Transaction; end
 class Withdrawal < Transaction
   belongs_to :account, required: true

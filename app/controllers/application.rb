@@ -15,6 +15,8 @@ end
 # error 400..502 do
 #   on_error
 # end
-
+error 400 do on_error end
+error 401 do on_error end
+error 403 do on_error end
 error 404 do on_error "No such resource." end
-error 500 do on_error "Internal Server Error." end
+error 500 do on_error end

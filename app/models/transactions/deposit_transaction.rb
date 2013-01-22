@@ -1,3 +1,5 @@
+# require 'app/models/transaction'
+
 class Transaction; end
 class Deposit < Transaction
   belongs_to :account, required: true

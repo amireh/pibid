@@ -1,6 +1,6 @@
 require 'rabl'
 
-feature "User payment methods" do
+feature "Payment methods" do
   before do
     mockup_user && sign_in
   end
