@@ -14,7 +14,7 @@ class PaymentMethod
     }
 
   property :default, Boolean, default: false
-  property :color, String, length: 6, default: lambda { |*| Colors[rand(Colors.size)] }
+  property :color, String, length: 6, default: lambda { |*| PaymentMethod.some_color }
 
   has n, :transactions, :constraint => :set_nil
   has n, :deposits,     :constraint => :set_nil
@@ -38,6 +38,10 @@ class PaymentMethod
   # end
 
   def colorize
-    self.update({ color: Colors[rand(Colors.size)] })
+    self.update({ color: some_color })
+  end
+
+  def self.some_color
+    Colors[rand(Colors.size)]
   end
 end

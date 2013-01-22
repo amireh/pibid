@@ -12,11 +12,11 @@ error do
   on_error
 end
 
-error 400..502 do
-  on_error
-end
+# error 400..502 do
+#   on_error
+# end
 
-error 404 do
-  response.body = "No such resource."
-  on_error
-end
+# error 404 do
+#   response.body = "No such resource."
+#   on_error
+# end

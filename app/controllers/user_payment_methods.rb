@@ -11,47 +11,48 @@ route_namespace '/users/:user_id/payment_methods' do
     rabl :"users/payment_methods/show"
   end
 
-  post :provides => [ :json ] do
-    p = {
-      name: params[:name],
-      color: params[:color],
-      default: params[:default]
-    }
+  def create_or_update_pm(pm = PaymentMethod.new)
+    p = accept_params([ :name, :color, :default ], pm)
 
     if params[:default]
       @user.payment_method.update({ default: false })
     end
 
-    unless @pm = @user.payment_methods.create(p)
-      halt 400, @pm.report_errors
+    if pm.saved?
+      unless pm.update(p)
+        halt 400, pm.report_errors
+      end
+    else
+      unless pm = @user.payment_methods.create(p)
+        halt 400, pm.report_errors
+      end
     end
 
-    status 204
+    pm
+  end
+
+  post :provides => [ :json ] do
+    @pm = create_or_update_pm
+
     rabl :"users/payment_methods/show"
   end
 
-  put '/:id', :provides => [ :json ] do |pm_id|
-    # TODO: migrate from user_settings
+  put '/:id', :provides => [ :json ] do |_, pm_id|
+    halt 404 unless @pm = @user.payment_methods.get(pm_id.to_i)
+
+    create_or_update_pm(@pm)
+
+    rabl :"users/payment_methods/show"
   end
 
-  delete '/:id', :provides => [ :json ] do |pm_id|
-    unless pm = @user.payment_methods.get(pm_id.to_i)
-      halt 404, "No such payment method."
-    end
-
-    notices = []
+  delete '/:id', :provides => [ :json ] do |_, pm_id|
+    halt 404 unless pm = @user.payment_methods.get(pm_id.to_i)
 
     was_default = pm.default
-    its_name    = pm.name
 
-    if pm.destroy
-      notices << "The payment method '#{its_name}' has been removed."
-    else
-      flash[:error] = pm.all_errors
-      return redirect '/settings/preferences'
+    unless pm.destroy
+      halt 500, pm.report_errors
     end
-
-    # @user = @user.refresh
 
     if @user.payment_methods.empty?
       @user.create_default_pm
@@ -59,12 +60,9 @@ route_namespace '/users/:user_id/payment_methods' do
 
     if was_default
       @user.payment_methods.first.update!({ default: true })
-      notices << "#{@user.payment_method.name} is now your default payment method."
     end
 
-    flash[:notice] = notices
-
-    redirect '/settings/preferences'
+    200
   end
 
 end

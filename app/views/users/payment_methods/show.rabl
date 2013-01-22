@@ -1,6 +1,6 @@
-object @pm
+object @pm => :payment_method
 
-attributes :name, :color
+attributes :name, :color, :default
 child(@pm.user) {
   attributes :id
 }
