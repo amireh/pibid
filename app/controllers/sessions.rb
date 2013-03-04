@@ -8,13 +8,21 @@ route_namespace '/sessions' do
     end
 
     authorize(u)
-
-    200
+    @user = current_user
+    rabl :"users/show"
   end
 
   delete auth: :user do
     session[:id] = nil
     200
+  end
+
+  get do
+    if logged_in?
+      200
+    else
+      401
+    end
   end
 end
 

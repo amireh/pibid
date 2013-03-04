@@ -46,4 +46,13 @@ helpers do
 
     rabl :"transactions/drilldowns/#{@drilldown}"
   end
+
+  def render_transactions_bulk(limit, offset)
+    limit  = limit.to_i   if limit.is_a? String
+    offset = offset.to_i  if offset.is_a? String
+    
+    @transies = current_account.transactions.all(:limit => limit, :offset => offset)
+
+    rabl :"transactions/drilldowns/bulk"
+  end
 end

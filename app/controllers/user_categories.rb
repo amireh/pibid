@@ -11,6 +11,12 @@ route_namespace '/users/:user_id/categories' do
     rabl :"categories/show"
   end
 
+  # return an array of all the categories of :user_id
+  get do
+    @categories = @user.categories
+    rabl :"categories/list"
+  end
+
   route_namespace '/users/:user_id/categories/:cid' do
 
     before do

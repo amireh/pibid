@@ -33,7 +33,12 @@ class Transaction
     self.occured_on = params[:occured_on].to_date if params.has_key?('occured_on')
 
     if params.has_key?('payment_method')
-      self.payment_method = @user.payment_methods.get(params[:payment_method].to_i)
+      self.payment_method = self.account.user.payment_methods.get(params[:payment_method].to_i)
+
+      if self.payment_method.nil?
+        puts "payment_method is nil, trying to search by name"
+        self.payment_method = self.account.user.payment_methods.first(:name => params[:payment_method])
+      end
     end
 
     if self.recurring?
@@ -99,6 +104,28 @@ route_namespace "/transactions" do
   end
 
 end
+
+route_namespace "/transactions/bulk" do
+  before do
+    restrict_to(:user)
+  end
+
+  get :provides => [ :json ] do
+    limit  = 15
+    offset = 0
+
+    if params[:limit]
+      limit = params[:limit].to_i if params[:limit].to_i > 0
+    end
+
+    if params[:offset]
+      offset = params[:offset].to_i if params[:offset].to_i > 0
+    end
+
+    render_transactions_bulk(limit,offset)
+  end
+end
+
 
 [ 'deposits', 'withdrawals', 'recurrings' ].each do |tx_type|
   route_namespace "/#{tx_type}" do
