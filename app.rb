@@ -5,6 +5,7 @@ $LOAD_PATH << $ROOT
 
 require 'rubygems'
 require 'bundler/setup'
+require 'rack/contrib'
 
 Bundler.require(:default)
 

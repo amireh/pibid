@@ -29,6 +29,7 @@ gem 'omniauth-github'
 gem 'omniauth-google-oauth2'
 gem 'rabl'
 gem 'yajl-ruby'
+gem 'rack-contrib'
 
 group :development do
   gem 'thin'
