@@ -140,4 +140,9 @@ route_namespace '/users/:user_id/stats' do
     s.to_json
   end
 
+  get '/balance' do
+    @account = current_account
+    rabl :"users/balance"
+  end
+
 end
