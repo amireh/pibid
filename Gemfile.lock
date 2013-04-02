@@ -1,10 +1,4 @@
 GIT
-  remote: https://github.com/amireh/timetastic
-  revision: 085f7572cc0ca9cb30af249c21e6fd80e59fa205
-  specs:
-    timetastic (0.1.4)
-
-GIT
   remote: https://github.com/sinatra/sinatra
   revision: eed4f71f4ff5a70f43c803fa6787920e9d01218b
   specs:
@@ -24,6 +18,11 @@ GIT
       rack-test
       sinatra (~> 1.4.0)
       tilt (~> 1.3)
+
+PATH
+  remote: /home/kandie/Workspace/Projects/timetastic
+  specs:
+    timetastic (0.1.5)
 
 GEM
   remote: http://rubygems.org/
@@ -129,6 +128,7 @@ GEM
     rspec-expectations (2.12.1)
       diff-lcs (~> 1.1.3)
     rspec-mocks (2.12.1)
+    sinatra-cross_origin (0.2.0)
     stringex (1.5.1)
     systemu (2.5.2)
     thin (1.5.0)
@@ -170,7 +170,8 @@ DEPENDENCIES
   rspec-core
   sinatra (= 1.4.0)!
   sinatra-contrib!
+  sinatra-cross_origin
   thin
-  timetastic (>= 0.1.4)!
+  timetastic (>= 0.1.5)!
   uuid
   yajl-ruby

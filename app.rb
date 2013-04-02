@@ -43,6 +43,15 @@ configure do
   Rabl.register!
 
   set :views, File.join($ROOT, 'app', 'views')
+
+  set :protection, :except => [:http_origin]
+
+  enable :cross_origin
+  # set :allow_origin, "localhost:4567"
+  set :allow_methods, [ :get, :post, :put, :delete, :options ]
+  set :allow_origin, :any
+  set :allow_credentials, true
+  set :max_age, "1728000"
 end
 
 # skip OmniAuth and Pony in test mode

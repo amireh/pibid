@@ -20,7 +20,8 @@ gem "dm-mysql-adapter", ">=1.2.0"
 gem 'multi_json'
 gem 'addressable'
 gem 'uuid'
-gem 'timetastic', '>= 0.1.4', :git => 'https://github.com/amireh/timetastic'
+# gem 'timetastic', '>= 0.1.5', :git => 'https://github.com/amireh/timetastic'
+gem 'timetastic', '>= 0.1.5', :path => "/home/kandie/Workspace/Projects/timetastic"
 gem "pony"
 gem 'omniauth'
 gem 'omniauth-facebook'
@@ -29,6 +30,7 @@ gem 'omniauth-github'
 gem 'omniauth-google-oauth2'
 gem 'rabl'
 gem 'yajl-ruby'
+gem 'sinatra-cross_origin', :require => 'sinatra/cross_origin'
 
 group :development do
   gem 'thin'
