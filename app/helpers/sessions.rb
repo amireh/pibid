@@ -91,6 +91,7 @@ module Sinatra
     end
 
     def authorize(user)
+      puts "logging in #{user.email}"
       if user.link
         # reset the state vars
         @user = nil

@@ -1,21 +1,37 @@
 route_namespace '/sessions' do
 
-  post do
-    restrict_to(:guest)
+  get auth: [ :user ], provides: [ :json ] do
+    rabl :"sessions/show"
+  end
+
+  post auth: [ :guest ], provides: [ :json ] do
+    puts "authenticating #{params[:email]}"
 
     unless u = authenticate(params[:email], params[:password])
-      halt 401
+      halt 401, 'Bad credentials.'
     end
 
     authorize(u)
 
-    200
+    rabl :"sessions/show"
   end
 
-  delete auth: :user do
+  delete auth: :user, provides: [ :json ] do
     session[:id] = nil
-    200
+
+    halt 200, {}.to_json
   end
+
+  delete '/:sink', auth: :user, provides: [ :json ] do
+    session[:id] = nil
+
+    halt 200, {}.to_json
+  end
+
+  get '/pulse', auth: :user do
+    halt 200, {}.to_json
+  end
+
 end
 
 # Support both GET and POST for callbacks

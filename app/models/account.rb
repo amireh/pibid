@@ -33,5 +33,7 @@ class Account
     true
   end
 
-
+  def url(root = false)
+    root ? "/accounts/#{id}" : "#{user.url}/accounts/#{id}"
+  end
 end

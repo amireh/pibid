@@ -99,7 +99,7 @@ class User
   class << self
     # TODO: this needs to be changed
     def encrypt(pw)
-      Digest::SHA1.hexdigest pw
+      Digest::SHA1.hexdigest(pw || "")
     end
   end
 
@@ -225,6 +225,10 @@ class User
 
   def top_categories(q = {})
     categories.sort { |a,b| a.transactions(q).count <=> b.transactions(q).count }.reverse
+  end
+
+  def url(root = nil)
+    "/users/#{id}"
   end
 
   private
