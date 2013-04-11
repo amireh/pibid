@@ -1,8 +1,32 @@
-object @tx => ''
+object @transaction => ''
 
-attributes :id
+attributes :id, :note, :occured_on
 
-node(:type) { |tx| tx.type.to_s[0].downcase }
+node(:type) { |tx| tx.type.to_s.downcase }
 node(:amount) { |tx| tx.amount.to_f.round(2) }
 node(:currency) { |tx| tx.currency }
-node(:categories) { |tx| tx.categories.map { |c| c.name } }
+
+node(:categories) { |tx|
+  tx.categories.map { |c| c.name }
+}
+
+# node(:categories) { |tx|
+#   tx.categories.map { |c| c.id }
+# }
+
+# child(:payment_method => :payment_method) { |pm|
+#   attributes :id
+# }
+
+node(:payment_method) do |tx|
+  partial "payment_methods/_show", object: tx.payment_method
+end
+
+node(:media) { |tx|
+  {
+    url: tx.url,
+    actions: {
+      edit: tx.url + '/edit'
+    }
+  }
+}

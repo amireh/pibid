@@ -1,5 +1,5 @@
 helpers do
-  def render_transactions_for(year = Time.now.year, month = Time.now.month, day = Time.now.day)
+  def render_transactions_for(year = Time.now.year, month = Time.now.month, day = Time.now.day, do_render = true)
     year  = year.to_i   if year.is_a? String
     month = month.to_i  if month.is_a? String
     day   = day.to_i    if day.is_a? String
@@ -44,6 +44,6 @@ helpers do
 
     @balance  = current_account.balance_for(@transies)
 
-    rabl :"transactions/drilldowns/#{@drilldown}"
+    rabl :"transactions/drilldowns/#{@drilldown}" if do_render
   end
 end

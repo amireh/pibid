@@ -1,165 +1,164 @@
-class Transaction
+get '/accounts/:account_id/transactions/:year',
+  auth: [ :user ],
+  requires: [ :account ],
+  provides: [ :json ] do
 
-  # Populates a transaction with fields found in the request params.
-  # Handles both newly created (not yet saved) and persistent resources.
-  # However, it does _not_ update or save the resource, which is why it's
-  # called a populator and not a builder.
-  #
-  # Accepted params:
-  #
-  # => amount: Float
-  # => currency: String (see Currency)
-  # => note: Text
-  # => occured_on: String (MM/DD/YYYY)
-  # => payment_method: Integer (id)
-  # => categories: Array of category ids (strings or integers, doesn't matter)
-  #
-  # For Recurring transies:
-  # => flow_type: one of [ 'positive', 'negative' ]
-  # => frequency: one of [ 'daily', 'monthly', 'yearly' ]
-  # => if frequency == monthly
-  #   => monthly_recurs_on_day: Integer, day of the month the tx should reoccur on
-  # => if frequency == yearly
-  #   => yearly_recurs_on_day: Integer, day of the year the tx should reoccur on
-  #   => yearly_recurs_on_month: Integer, month of the year the tx should reoccur on
-  # }
-  #
-  # @return: the passed transie
-  #
-  def populate(params)
-    self.amount     = params[:amount].to_f        if params.has_key?('amount')
-    self.currency   = params[:currency]           if params.has_key?('currency')
-    self.note       = params[:note]               if params.has_key?('note')
-    self.occured_on = params[:occured_on].to_date if params.has_key?('occured_on')
-
-    if params.has_key?('payment_method')
-      self.payment_method = @user.payment_methods.get(params[:payment_method].to_i)
-    end
-
-    if self.recurring?
-      self.flow_type = params[:flow_type].to_sym if params.has_key?('flow_type')
-
-      if params.has_key?('frequency')
-        self.frequency = params[:frequency].to_sym
-
-        case self.frequency
-        when :monthly
-          # only the day is used in this case
-          if params.has_key?('monthly_recurs_on_day')
-            self.recurs_on = DateTime.new(0, 1, params[:monthly_recurs_on_day].to_i)
-          end
-        when :yearly
-          # the day and month are used in this case
-          if params.has_key?('yearly_recurs_on_day') && params.has_key?('yearly_recurs_on_month')
-            self.recurs_on = DateTime.new(0,
-              params[:yearly_recurs_on_month].to_i,
-              params[:yearly_recurs_on_day].to_i)
-          end
-        end # self.frequency types
-      end # has frequency
-    end # is recurring
-
-    self
-  end # populate
-
-  def attach_categories(category_ids)
-    if category_ids && category_ids.is_a?(Array)
-      self.categories = category_ids.map { |cid| self.account.user.categories.get(cid.to_i) }
-    end
-
-    self
-  end # attach_categories
-end # Transaction
-
-public
-
-route_namespace "/transactions" do
-  before do
-    restrict_to(:user)
-  end
-
-  get :provides => [ :json ] do
-    year  = Time.now.year
-    month = 0
-    day   = 0
-
-    if params[:year]
-      year = params[:year].to_i if params[:year].to_i != 0
-    end
-
-    if params[:month]
-      month = params[:month].to_i if params[:month].to_i != 0
-    end
-
-    if params[:day]
-      day = params[:day].to_i if params[:day].to_i != 0
-    end
-
-    render_transactions_for(year,month,day)
-  end
-
+  render_transactions_for(params[:year].to_i, 0, 0)
 end
 
-[ 'deposits', 'withdrawals', 'recurrings' ].each do |tx_type|
-  route_namespace "/#{tx_type}" do
-    before do
-      restrict_to(:user)
+get '/accounts/:account_id/transactions/:year/:month',
+  auth: [ :user ],
+  requires: [ :account ],
+  provides: [ :json ] do
+
+  render_transactions_for(params[:year].to_i, params[:month].to_i, 0, false)
+
+  rabl :"transactions/index"
+end
+
+get '/accounts/:account_id/transactions',
+  auth: :user,
+  requires: [ :account ],
+  provides: [ :json ] do
+
+  year  = Time.now.year
+  month = 0
+  day   = 0
+
+  if params[:year]
+    year = params[:year].to_i if params[:year].to_i != 0
+  end
+
+  if params[:month]
+    month = params[:month].to_i if params[:month].to_i != 0
+  end
+
+  if params[:day]
+    day = params[:day].to_i if params[:day].to_i != 0
+  end
+
+  render_transactions_for(year,month,day)
+end
+
+
+post '/accounts/:account_id/transactions',
+  auth: :user,
+  provides: [ :json ],
+  requires: [ :account ] do
+
+  api_required!({
+    amount:     nil,
+    type: lambda { |t|
+      unless [ 'withdrawal', 'deposit' ].include?(t)
+        return "Invalid type '#{t}', accepted types are: deposit and withdrawal"
+      end
+    }
+  })
+
+  api_optional!({
+    note:       nil,
+    occured_on: lambda { |d|
+      begin; d.to_date(false); rescue; return "Invalid date '#{d}', expected format: MM/DD/YYYY"; end
+      true
+    },
+    currency:   nil,
+    categories: nil,
+    payment_method: lambda { |pm_id|
+      unless @pm = @account.user.payment_methods.get(pm_id)
+        return "No such payment method."
+      end
+    }
+  })
+
+  type = nil
+  api_consume! :type do |v| type = v end
+
+  api_transform! :amount do |a| a.to_f end
+  api_transform! :occured_on do |d| d.to_date end
+  api_transform! :payment_method do |_| @pm end
+
+  categories = []
+  api_consume! :categories do |v| categories = v end
+
+  @transaction = @account.send("#{type}s").new(api_params)
+
+  unless @transaction.save
+    halt 400, @transaction.errors
+  end
+
+  if categories.any?
+    categories.each do |cid|
+      unless c = @account.user.categories.get(cid)
+        next
+      end
+
+      @transaction.categories << c
     end
 
-    if tx_type == 'recurrings'
-      # recurring transies index
-      get :provides => [ :json ] do
-        # TODO: enforce some limit..
+    @transaction.save
+  end
 
-        @transies         = current_account.recurrings.all
-        @daily_transies   = @transies.all({ frequency: :daily })
-        @monthly_transies = @transies.all({ frequency: :monthly })
-        @yearly_transies  = @transies.all({ frequency: :yearly })
+  respond_with @transaction do |f|
+    f.json { rabl :"transactions/show" }
+  end
+end
 
-        rabl :"transactions/recurrings/index"
+patch '/accounts/:account_id/transactions/:transaction_id',
+  auth: :user,
+  provides: [ :json ],
+  requires: [ :account, :transaction ] do
+
+  api_optional!({
+    amount:     nil,
+    note:       nil,
+    occured_on: lambda { |d|
+      begin; d.to_date(false); rescue; return 'Invalid date, expected format: MM/DD/YYYY'; end
+      true
+    },
+    currency:   nil,
+    categories: nil,
+    payment_method: lambda { |pm_id|
+      unless @pm = @account.user.payment_methods.get(pm_id)
+        return "No such payment method."
       end
+    }
+  })
+
+  api_transform! :occured_on do |d| d.to_date end
+  api_transform! :payment_method do |_| @pm end
+
+  api_consume! :categories do |categories|
+    @transaction.categories = []
+
+    categories.each do |cid|
+      unless c = @account.user.categories.get(cid)
+        next
+      end
+
+      @transaction.categories << c
     end
 
-    post :provides => [ :json ] do
-      @tx = @account.send(tx_type).new.populate(params)
+    @transaction.save
+  end
 
-      unless @tx.save
-        halt 400, @tx.report_errors
-      end
+  unless @transaction.update(api_params)
+    halt 400, @transaction.errors
+  end
 
-      # attach to categories
-      @tx.attach_categories(params[:categories] || []).save
+  respond_with @transaction do |f|
+    f.json { rabl :"transactions/show" }
+  end
+end
 
-      rabl :"transactions/show"
-    end
 
-    route_namespace "/#{tx_type}/:tx_id" do
-      before do
-        restrict_to(:user, with: lambda { |u|
-          unless @tx = u.accounts.first.transactions.get(params[:tx_id])
-            halt 404
-          end
+delete '/accounts/:account_id/transactions/:transaction_id',
+  auth: :user,
+  provides: [ :json ],
+  requires: [ :account, :transaction ] do
 
-          true
-        })
-      end
+  unless @transaction.destroy
+    halt 400, @transaction.errors
+  end
 
-      put :provides => [ :json ] do
-        unless @tx.populate(params).attach_categories(params[:categories] || []).save
-          halt 400, @tx.report_errors
-        end
-
-        rabl :"transactions/show"
-      end
-
-      delete :provides => [ :json ] do |tid|
-        unless @tx.destroy
-          halt 400, @tx.report_errors
-        end
-
-        200
-      end
-
-    end # ns: /:type/:tx_id
-  end # ns: /:type
-end # transie type loop
+  halt 200, '{}'.to_json
+end
