@@ -16,6 +16,16 @@ get '/accounts/:account_id/transactions/:year/:month',
   rabl :"transactions/index"
 end
 
+get '/accounts/:account_id/transactions/:year/:month/:day',
+  auth: [ :user ],
+  requires: [ :account ],
+  provides: [ :json ] do
+
+  render_transactions_for(params[:year].to_i, params[:month].to_i, params[:day].to_i, false)
+
+  rabl :"transactions/index"
+end
+
 get '/accounts/:account_id/transactions',
   auth: :user,
   requires: [ :account ],
