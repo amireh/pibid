@@ -4,7 +4,7 @@ gem 'sinatra', '=1.4.0',
   :git => 'https://github.com/sinatra/sinatra'
 gem 'sinatra-contrib',
   :git => 'https://github.com/sinatra/sinatra-contrib',
-  :require => [ 'sinatra/namespace', 'sinatra/config_file' ]
+  :require => [ 'sinatra/namespace', 'sinatra/config_file', 'sinatra/respond_with' ]
 gem 'mysql'
 gem 'json'
 gem "dm-core", ">=1.2.0"
@@ -30,7 +30,8 @@ gem 'omniauth-github'
 gem 'omniauth-google-oauth2'
 gem 'rabl'
 gem 'yajl-ruby'
-gem 'sinatra-cross_origin', :require => 'sinatra/cross_origin'
+# gem 'sinatra-cross_origin', :require => 'sinatra/cross_origin'
+gem 'sinatra-cross_origin', :github => 'britg/sinatra-cross_origin', :require => 'sinatra/cross_origin'
 
 group :development do
   gem 'thin'

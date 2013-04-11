@@ -20,6 +20,11 @@ config_files.each { |config_file|
   end
 }
 
+options '*' do
+  response['Access-Control-Allow-Headers'] = 'origin, x-requested-with, content-type, accept'
+  halt 200, '{}'
+end
+
 configure do
   require 'config/initializer'
 
@@ -33,6 +38,7 @@ configure do
 
   # load everything
   require 'app/models/transaction'
+
   [ 'lib', 'app/helpers', 'app/models', 'app/controllers' ].each { |d|
     Dir.glob("#{d}/**/*.rb").each { |f| require f }
   }
@@ -48,8 +54,9 @@ configure do
 
   enable :cross_origin
   # set :allow_origin, "localhost:4567"
-  set :allow_methods, [ :get, :post, :put, :delete, :options ]
+  set :allow_methods, [ :get, :post, :put, :patch, :delete, :options ]
   set :allow_origin, :any
+  set :allow_headers, ["*", "Content-Type", "Accept", "AUTHORIZATION", "Cache-Control", 'X-Requested-With']
   set :allow_credentials, true
   set :max_age, "1728000"
 end
@@ -93,3 +100,4 @@ end
 
 configure :production   do Bundler.require(:production)  end
 configure :development  do Bundler.require(:development) end
+
