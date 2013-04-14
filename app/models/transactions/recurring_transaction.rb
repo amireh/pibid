@@ -10,7 +10,17 @@ class Recurring < Transaction
   property :last_commit, DateTime, allow_nil: true
   property :active,     Boolean, default: true
 
-  validates_presence_of :note, message: 'Must provide a name for this bill'
+  before :save do
+    if !self.note || self.note.to_s.empty?
+      self.errors.add :note,
+        self.flow_type == :negative ?
+        "Must provide a name for this bill" :
+        "Must provide a name for this income flow"
+
+      throw :halt
+    end
+  end
+  # validates_presence_of :note, message: 'Must provide a name for this bill'
 
   def +(y)
     amount * (flow_type == :negative ? -1 : 1) + y
@@ -48,6 +58,7 @@ class Recurring < Transaction
 
   def applicable?(now = nil)
     now ||= Time.now
+    now = now.to_time if now.respond_to?(:to_time) && !now.is_a?(Time)
 
     case frequency
     when :daily
@@ -58,7 +69,7 @@ class Recurring < Transaction
       # is it the day of the month the tx should be committed on?
       if recurs_on.day == now.day
         # committed already for this month?
-        return !last_commit || now >= 1.month.ahead(last_commit.to_time)
+        return !last_commit || zero_out(now) >= 1.month.ahead(zero_out last_commit.to_time)
       end
     when :yearly
       # is it the day and month of the year the tx should be committed on?
@@ -101,4 +112,9 @@ class Recurring < Transaction
     self.update({ last_commit: now })
   end
 
+  private
+
+  def zero_out(time)
+    Time.new(time.year, time.month, time.day)
+  end
 end
