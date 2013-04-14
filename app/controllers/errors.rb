@@ -1,7 +1,13 @@
 def on_api_error(msg = response.body)
-  content_type  :json
+  if request.request_method == 'OPTIONS'
+    content_type :text
+    halt response.status
+  end
+
+  # content_type  :json
   status        response.status
-  response['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
+  # response['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
+  # response['Access-Control-Allow-Headers'] = 'origin, x-requested-with, content-type, accept'
 
   errmap = {}
 
@@ -17,7 +23,7 @@ def on_api_error(msg = response.body)
     errmap = msg.to_hash
     msg.to_hash.collect { |k,v| v }.flatten
   else
-    [ "unexpected response: #{msg}" ]
+    [ "unexpected response: #{msg.class} -> #{msg}" ]
   end
 
   {
@@ -27,9 +33,9 @@ def on_api_error(msg = response.body)
   }
 end
 
-error do
-  on_api_error.to_json
-end
+# error do
+#   on_api_error.to_json
+# end
 
 error Sinatra::NotFound do
   return if @internal_error_handled
@@ -65,9 +71,9 @@ error 500..503 do
   return if @internal_error_handled
   @internal_error_handled = true
 
-  if !settings.intercept_internal_errors
-    raise request.env['sinatra.error']
-  end
+  # if !settings.intercept_internal_errors
+  #   raise request.env['sinatra.error']
+  # end
 
   begin
     courier.report_error(request.env['sinatra.error'])
@@ -75,5 +81,10 @@ error 500..503 do
     # raise e
   end
 
-  on_api_error("Internal error").to_json
+  if settings.test?
+
+    on_api_error(request.env['sinatra.error'] || response.body).to_json
+  else
+    on_api_error("Internal error").to_json
+  end
 end

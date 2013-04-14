@@ -1,8 +1,9 @@
 require 'rabl'
 
-feature "Transactions" do
+describe "Transactions" do
   before do
-    mockup_user && sign_in
+    valid! fixture(:user)
+    sign_in
   end
 
   def render_resource(r, t = '/transactions/show')
@@ -12,17 +13,15 @@ feature "Transactions" do
     )
   end
 
-  scenario "Retrieving yearly transies" do
+  it "Retrieving yearly transies" do
     for i in 0..5 do
       month = i < 2 ? 1 : 2
       @a.deposits.create({ amount: 5, occured_on: "#{month}/06/2012".to_date })
     end
 
-    rc = prc get "/transactions?year=2012"
-    rc.resp.status.should == 200
-    rc.rc.length.should == 2
-    rc.rc["1"]["transactions"].length.should == 2
-    rc.rc["2"]["transactions"].length.should == 4
+    rc = api_call get "/accounts/#{@account.id}/transactions/2012"
+    rc.should succeed
+    rc.body["transactions"].length.should == 6
   end
 
   scenario "Retrieving monthly transies" do
@@ -34,13 +33,17 @@ feature "Transactions" do
       @a.deposits.create({ amount: 5, occured_on: "3/06/2012".to_date })
     end
 
-    rc = prc get "/transactions?year=2012&month=2"
-    rc.resp.status.should == 200
-    rc.rc["6"]["transactions"].length.should == 2
+    rc = api_call get "/accounts/#{@account.id}/transactions/2012/2"
+    rc.should succeed
+    rc.body["transactions"].length.should == 2
 
-    rc = prc get "/transactions?year=2012&month=3"
-    rc.resp.status.should == 200
-    rc.rc["6"]["transactions"].length.should == 4
+    rc = api_call get "/accounts/#{@account.id}/transactions/2012/3"
+    rc.should succeed
+    rc.body["transactions"].length.should == 4
+
+    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=3"
+    rc.should succeed
+    rc.body["transactions"].length.should == 4
   end
 
   scenario "Retrieving daily transies" do
@@ -52,98 +55,90 @@ feature "Transactions" do
       @a.deposits.create({ amount: 5, occured_on: "2/07/2012".to_date })
     end
 
-    rc = prc get "/transactions?year=2012&month=2&day=6"
-    rc.resp.status.should == 200
-    rc.rc["transactions"].length.should == 2
+    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=2&day=6"
+    rc.should succeed
+    rc.body["transactions"].length.should == 2
 
-    rc = prc get "/transactions?year=2012&month=2&day=7"
-    rc.resp.status.should == 200
-    rc.rc["transactions"].length.should == 4
+    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=2&day=7"
+    rc.should succeed
+    rc.body["transactions"].length.should == 4
   end
 
   scenario "Out-of-range daily transies" do
-    rc = prc get "/transactions?year=2012&month=2&day=35"
-    rc.resp.status.should == 400
+    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=2&day=35"
+    rc.http_rc.should == 400
   end
 
   scenario "Out-of-range monthly transies" do
-    rc = prc get "/transactions?year=2012&month=14"
-    rc.resp.status.should == 400
+    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=14"
+    rc.http_rc.should == 400
   end
 
   scenario "Creating a transaction" do
     @a.deposits.count.should == 0
-    rc = prc post "/deposits", { amount: 5 }
-    rc.resp.status.should == 200
+    rc = api_call post "/accounts/#{@account.id}/transactions", { type: "deposit", amount: 5 }
+    rc.should succeed
     @a.refresh.deposits.count.should == 1
   end
 
   scenario "Updating a transie" do
     @a.deposits.count.should == 0
-    rc = prc post "/deposits", { amount: 5 }
-    rc.resp.status.should == 200
+    rc = api_call post "/accounts/#{@account.id}/transactions", { type: "deposit", amount: 5 }
+    rc.should succeed
 
     tx = @a.refresh.deposits.first
 
-    rc = prc put "/deposits/#{tx.id}", { amount: 10 }
-    rc.resp.status.should == 200
+    rc = api_call patch "/accounts/#{@account.id}/transactions/#{tx.id}", { amount: 10 }
+    rc.should succeed
 
     tx.refresh.amount.should == 10
     @a.refresh.balance.should == 10
   end
 
-  scenario "Attaching a category to a transie" do
-    @a.deposits.count.should == 0
-    rc = prc post "/deposits", { amount: 5 }
-    rc.resp.status.should == 200
+  context "tagging transies" do
+    it "tagging a transie" do
+      @tx = valid! fixture(:deposit)
+      @c  = valid! fixture(:category)
 
-    tx = @a.refresh.deposits.first
+      rc = api_call patch "/accounts/#{@account.id}/transactions/#{@tx.id}", { categories: [ @c.id ] }
+      rc.should succeed
 
-    rc = prc put "/deposits/#{tx.id}", { categories: [ @user.categories.first.id ] }
-    rc.resp.status.should == 200
+      @tx.refresh.categories.count.should == 1
+    end
 
-    tx.refresh.categories.count.should == 1
+    it "modifying a transie's categories" do
+      @tx = valid! fixture(:deposit, { categories: @user.categories.map(&:id) })
+
+      rc = api_call patch "/accounts/#{@account.id}/transactions/#{@tx.id}", {
+        categories: [ @user.categories.first.id ]
+      }
+
+      rc.should succeed
+
+      @tx.refresh.categories.count.should == 1
+    end
+
+    it "wiping out all transie categories" do
+      @tx = valid! fixture(:deposit, { categories: @user.categories.map(&:id) })
+      @tx.refresh.categories.length.should == @user.categories.length
+
+      api {
+        patch "/accounts/#{@account.id}/transactions/#{@tx.id}", {
+          categories: [ ]
+        }
+      }.should succeed
+
+      @tx.refresh.categories.count.should == 0
+    end
   end
 
-  scenario "Modifying a transie's categories" do
-    @a.deposits.count.should == 0
-    rc = prc post "/deposits", { amount: 5, categories: @user.categories.collect { |c| c.id } }
-    rc.resp.status.should == 200
+  it "destroys a transie" do
+    @tx = valid! fixture(:deposit)
 
-    tx = @a.refresh.deposits.first
-    tx.categories.count.should > 0
+    rc = api_call delete "/accounts/#{@account.id}/transactions/#{@tx.id}"
+    rc.should succeed
 
-    rc = prc put "/deposits/#{tx.id}", { categories: [ @user.categories.first.id ] }
-    rc.resp.status.should == 200
-
-    tx.refresh.categories.count.should == 1
-  end
-
-  scenario "Removing all transie categories" do
-    @a.deposits.count.should == 0
-    rc = prc post "/deposits", { amount: 5, categories: @user.categories.collect { |c| c.id } }
-    rc.resp.status.should == 200
-
-    tx = @a.refresh.deposits.first
-    tx.categories.count.should > 0
-
-    rc = prc put "/deposits/#{tx.id}", { categories: [] }
-    rc.resp.status.should == 200
-
-    tx.refresh.categories.count.should == 0
-  end
-
-  scenario "Destroying a transie" do
-    @a.deposits.count.should == 0
-    rc = prc post "/deposits", { amount: 5 }
-    rc.resp.status.should == 200
-
-    tx = @a.refresh.deposits.first
-
-    rc = prc delete "/deposits/#{tx.id}"
-    rc.resp.status.should == 200
-
-    @a.refresh.deposits.count.should == 0
+    @account.refresh.deposits.count.should == 0
   end
 
 end

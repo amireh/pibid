@@ -23,7 +23,7 @@ namespace :pibi do
     end
 
     def rand_date()
-      Time.new(@year, rand(11) + 1, rand(26) + 1)
+      DateTime.new(@year.to_i, rand(11) + 1, rand(26) + 1)
     end
 
     # some withdrawals

@@ -90,7 +90,7 @@ describe "Recurring Transactions" do
       amount: 10,
       flow_type: :negative,
       frequency: :monthly,
-      account: @account
+      account:    @account
     })
 
     rt.applicable?.should be_true
@@ -103,8 +103,7 @@ describe "Recurring Transactions" do
     rt = rt.refresh
 
     rt.applicable?(1.day.ahead).should be_false
-    t = Time.new(1.month.ahead.year, 1.month.ahead.month, rt.recurs_on.day)
-    rt.applicable?(t).should be_true
+    rt.applicable?(DateTime.new(1.month.ahead.year, 1.month.ahead.month, rt.recurs_on.day)).should be_true
     rt.applicable?(1.year.ahead).should be_true
     rt.applicable?(1.day.ago).should be_false
     rt.applicable?(1.month.ago).should be_false

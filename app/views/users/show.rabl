@@ -1,9 +1,9 @@
 object @user
 
-attributes :id, :name, :email
+attributes :id, :name, :email, :gravatar_email
 
 node :account do |a|
-  partial "accounts/_show", object: @user.account
+  partial "accounts/show", object: @user.account
 end
 
 node(:media) do |u|
@@ -19,4 +19,16 @@ node(:media) do |u|
       url: u.url(true) + '/payment_methods'
     }
   }
+end
+
+node(:payment_methods) do |u|
+  u.payment_methods.map { |pm| partial "payment_methods/show", object: pm }
+end
+
+node(:currencies) do |u|
+  Currency.all.map { |c| partial "currencies/_show", object: c }
+end
+
+node(:categories) do |u|
+  u.categories.map { |c| partial "categories/_show", object: c }
 end
