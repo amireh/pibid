@@ -31,14 +31,8 @@ class Transaction
     CategoryTransaction.all({ transaction_id: self.id }).destroy
   end
 
-  validates_with_method :amount, :check_amount
-
-  def check_amount
-    if !self.amount || self.amount <= 0.0
-      return [ false, 'Transaction amount must be greater than 0' ]
-    end
-
-    true
+  def url
+    "#{self.account.url(true)}/transactions/#{id}"
   end
 
   validates_with_method :currency, :valid_currency?
@@ -63,6 +57,13 @@ class Transaction
   after :create do
     add_to_account(to_account_currency)
     self.account.save
+  end
+
+  before :save do
+    if !self.amount || self.amount.to_f <= 0
+      self.errors.add :amount, 'Transaction amount must be greater than 0'
+      throw :halt
+    end
   end
 
   # adjust the account balance if our amount or currency are being updated

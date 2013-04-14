@@ -1,5 +1,5 @@
 node :transactions do
   @transies.map { |tx|
-    partial("transactions/show", object: tx )
+    partial("recurrings/show", object: tx )
   }
 end

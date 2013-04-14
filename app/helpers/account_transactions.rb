@@ -16,33 +16,33 @@ helpers do
       @drilldown = "daily"
 
       @transies = current_account.daily_transactions(Time.new(year,month,day))
-      @drilled_transies = { "0" => @transies }
+      # @drilled_transies = { "0" => @transies }
     elsif month > 0
       # monthly transaction view
       @drilldown = "monthly"
       @transies = current_account.monthly_transactions(Time.new(year, month, 1))
 
       # partition into days
-      @drilled_transies = {}
-      @transies.each { |tx|
-        @drilled_transies[tx.occured_on.day] ||= []
-        @drilled_transies[tx.occured_on.day] <<  tx
-      }
+      # @drilled_transies = {}
+      # @transies.each { |tx|
+      #   @drilled_transies[tx.occured_on.day] ||= []
+      #   @drilled_transies[tx.occured_on.day] <<  tx
+      # }
     else
       # yearly transaction view
       @drilldown = "yearly"
       @transies = current_account.yearly_transactions(Time.new(year, 1, 1))
 
       # partition into months
-      @drilled_transies = {}#Array.new(13, [])
+      # @drilled_transies = {}#Array.new(13, [])
       # @drilled_transies = Array.new(13, [])
-      @transies.each { |tx|
-        @drilled_transies[tx.occured_on.month] ||= []
-        @drilled_transies[tx.occured_on.month] <<  tx
-      }
+      # @transies.each { |tx|
+      #   @drilled_transies[tx.occured_on.month] ||= []
+      #   @drilled_transies[tx.occured_on.month] <<  tx
+      # }
     end
 
-    @balance  = current_account.balance_for(@transies)
+    @balance = current_account.balance_for(@transies)
 
     rabl :"transactions/drilldowns/#{@drilldown}" if do_render
   end

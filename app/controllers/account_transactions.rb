@@ -47,7 +47,9 @@ get '/accounts/:account_id/transactions',
     day = params[:day].to_i if params[:day].to_i != 0
   end
 
-  render_transactions_for(year,month,day)
+  render_transactions_for(year,month,day, false)
+
+  rabl :"transactions/index"
 end
 
 
@@ -170,5 +172,5 @@ delete '/accounts/:account_id/transactions/:transaction_id',
     halt 400, @transaction.errors
   end
 
-  halt 200, '{}'.to_json
+  blank_halt!
 end

@@ -19,7 +19,7 @@ node(:categories) { |tx|
 # }
 
 node(:payment_method) do |tx|
-  partial "payment_methods/_show", object: tx.payment_method
+  partial "payment_methods/show", object: tx.payment_method
 end
 
 node(:media) { |tx|
