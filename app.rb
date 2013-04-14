@@ -25,7 +25,7 @@ options '*' do
   halt 200, '{}'
 end
 
-configure do
+configure do |app|
   require 'config/initializer'
 
   config_files.each { |cf| config_file 'config/%s.yml' %[cf] }
@@ -59,29 +59,33 @@ configure do
   set :allow_headers, ["*", "Content-Type", "Accept", "AUTHORIZATION", "Cache-Control", 'X-Requested-With']
   set :allow_credentials, true
   set :max_age, "1728000"
-end
 
-# skip OmniAuth and Pony in test mode
-configure :development, :production do |app|
-
-  use OmniAuth::Builder do
+  use OmniAuth::Builder do |config|
     OmniAuth.config.on_failure = Proc.new { |env|
       OmniAuth::FailureEndpoint.new(env).redirect_to_failure
     }
 
-    provider :facebook,
-      app.settings.credentials['facebook']['key'],
-      app.settings.credentials['facebook']['secret']
+    provider :developer
 
-    provider :google_oauth2,
-      app.settings.credentials['google']['key'],
-      app.settings.credentials['google']['secret'],
-      { access_type: "offline", approval_prompt: "" }
+    unless app.settings.test?
+      provider :facebook,
+        app.settings.credentials['facebook']['key'],
+        app.settings.credentials['facebook']['secret']
 
-    provider :github,
-      app.settings.credentials['github']['key'],
-      app.settings.credentials['github']['secret']
+      provider :google_oauth2,
+        app.settings.credentials['google']['key'],
+        app.settings.credentials['google']['secret'],
+        { access_type: "offline", approval_prompt: "" }
+
+      provider :github,
+        app.settings.credentials['github'][app.settings.environment.to_s]['key'],
+        app.settings.credentials['github'][app.settings.environment.to_s]['secret']
+    end
   end
+end
+
+# skip OmniAuth and Pony in test mode
+configure :development, :production do |app|
 
   Pony.options = {
     :from => settings.courier[:from],

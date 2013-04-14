@@ -32,6 +32,7 @@ gem 'rabl'
 gem 'yajl-ruby'
 # gem 'sinatra-cross_origin', :require => 'sinatra/cross_origin'
 gem 'sinatra-cross_origin', :github => 'britg/sinatra-cross_origin', :require => 'sinatra/cross_origin'
+gem 'sinatra-can', :require => "sinatra/can"
 
 group :development do
   gem 'thin'

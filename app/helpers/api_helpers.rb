@@ -2,6 +2,34 @@ module Sinatra
 
   # TODO: accept nested parameters
   module API
+    class Config
+      attr_accessor :filters
+
+      def initialize()
+        @filters = {}
+      end
+
+      def filter(resource_id, &callback)
+        @filters[resource_id.to_sym] ||= []
+        @filters[resource_id.to_sym] << callback
+      end
+    end
+
+    class << self
+      def configure
+        @@config = Config.new
+
+        yield(@@config) if block_given?
+      end
+
+      def config
+        raise "Sinatra::API has not been configured, access to #config is blocked." unless @@config
+
+        @@config
+      end
+    end
+
+
     module Helpers
       def api_call?
         (request.accept || '').to_s.include?('json')
@@ -81,6 +109,16 @@ module Sinatra
         end
       end
 
+      def api_transform!(key, &handler)
+        if val = @api[:required][key.to_sym]
+          @api[:required][key.to_sym] = yield(val) if block_given?
+        end
+
+        if val = @api[:optional][key.to_sym]
+          @api[:optional][key.to_sym] = yield(val) if block_given?
+        end
+      end
+
       def api_has_param?(key)
         @api[:optional].has_key?(key)
       end
@@ -138,10 +176,21 @@ module Sinatra
           if container
             m << " in #{container.class.name.to_s}##{container.id}"
           end
+
           halt 404, m
         end
 
+        unless can? :access, resource
+          halt 403, "You do not have access to this #{rklass} resource."
+        end
+
         instance_variable_set('@'+r, resource)
+
+        # if filters = API::config.filters[r.to_sym]
+        #   filters.each { |filter|
+        #     filter.call(self, resource)
+        #   }
+        # end
 
         resource
       end
@@ -195,6 +244,7 @@ module Sinatra
         end
       end
 
+      app.set(:exclusivity_filters, {})
       app.set(:requires) do |*resources|
         condition do
           @required = resources.collect { |r| r.to_s }
