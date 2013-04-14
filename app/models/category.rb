@@ -4,12 +4,7 @@ class Category
   default_scope(:default).update(:order => [ :name.asc ])
 
   property :id, Serial
-
-  property :name, String, length: 250,
-    required: true,
-    messages: {
-      presence: 'You must provide a name for the category!'
-    }
+  property :name, String, length: 250
 
   belongs_to :user, required: true
   has n, :transactions, :through => Resource, :constraint => :skip
@@ -17,8 +12,13 @@ class Category
   has n, :withdrawals,  :through => Resource, via: :transaction, :constraint => :skip
   has n, :recurrings,   :through => Resource, via: :transaction, :constraint => :skip
 
+  validates_presence_of :name, message: 'You must provide a name for the category!'
+
   validates_uniqueness_of :name, :scope => [ :user_id ],
     message: 'You already have such a category!'
+
+  validates_length_of :name, min: 3,
+    message: 'A category must be at least 3 characters long.'
 
   before :destroy do
     CategoryTransaction.all({ category_id: self.id }).destroy
