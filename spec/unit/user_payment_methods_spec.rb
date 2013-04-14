@@ -1,16 +1,7 @@
 describe PaymentMethod do
 
   before do
-    User.destroy
-
-    @some_salt = Pibi.salt
-    @u = User.create({
-      name: 'Mysterious Mocker',
-      email: 'very@mysterious.com',
-      provider: 'pibi',
-      password: @some_salt,
-      password_confirmation: @some_salt
-    })
+    valid! fixture(:user)
   end
 
   it "should create a pm" do

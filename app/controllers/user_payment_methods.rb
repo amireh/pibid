@@ -1,68 +1,114 @@
-route_namespace '/users/:user_id/payment_methods' do
-  before do
-    restrict_to(:user, with: { id: params[:user_id].to_i })
-  end
+post '/users/:user_id/payment_methods',
+  auth: [ :user ],
+  provides: [ :json ],
+  requires: [ :user ] do
 
-  get '/:id', :provides => [ :json ] do |_, pm_id|
-    unless @pm = @user.payment_methods.get(pm_id.to_i)
-      halt 404, 'No such payment method.'
+  api_required!({
+    name: nil
+  })
+
+  api_optional!({
+    color: lambda { |v|
+      if v
+        if v.empty?
+          return "You must define some color!"
+        elsif (v =~ /[\w]{6}/) == nil
+          return "Color must be a hex-code color value of 6 characters"
+        end
+      end
+    },
+    default: nil
+  })
+
+  last_default_pm = nil
+
+  api_transform! :default do |v|
+    if (!!v) == true
+      last_default_pm = @user.payment_method
     end
 
-    rabl :"users/payment_methods/show"
+    v
   end
 
-  def create_or_update_pm(pm = PaymentMethod.new)
-    p = accept_params([ :name, :color, :default ], pm)
+  @payment_method = @user.payment_methods.create(api_params)
 
-    if params[:default]
+  unless @payment_method.saved?
+    halt 400, @payment_method.errors
+  end
+
+  if last_default_pm
+    last_default_pm.update!({ default: false })
+  end
+
+  respond_with @payment_method do |f|
+    f.json { rabl :"payment_methods/show" }
+  end
+end
+
+get '/users/:user_id/payment_methods/:payment_method_id',
+  auth: [ :user ],
+  provides: [ :json ],
+  requires: [ :user, :payment_method ] do
+
+  respond_with @payment_method do |f|
+    f.json { rabl :"payment_methods/show" }
+  end
+end
+
+patch '/users/:user_id/payment_methods/:payment_method_id',
+  auth: [ :user ],
+  provides: [ :json ],
+  requires: [ :user, :payment_method ] do
+
+  api_optional!({
+    name: nil,
+    color: lambda { |v|
+      if v
+        if v.empty?
+          return "You must define some color!"
+        elsif (v =~ /[\w]{6}/) == nil
+          return "Color must be a hex-code color value of 6 characters"
+        end
+      end
+    },
+    default: nil
+  })
+
+  api_consume! :default do |value|
+    if (!!value) == true
       @user.payment_method.update({ default: false })
-    end
 
-    if pm.saved?
-      unless pm.update(p)
-        halt 400, pm.report_errors
-      end
-    else
-      unless pm = @user.payment_methods.create(p)
-        halt 400, pm.report_errors
-      end
+      @payment_method.update({ default: true })
     end
-
-    pm
   end
 
-  post :provides => [ :json ] do
-    @pm = create_or_update_pm
-
-    rabl :"users/payment_methods/show"
+  unless @payment_method.update(api_params)
+    halt 400, @payment_method.errors
   end
 
-  put '/:id', :provides => [ :json ] do |_, pm_id|
-    halt 404 unless @pm = @user.payment_methods.get(pm_id.to_i)
+  respond_with @payment_method do |f|
+    f.json { rabl :"payment_methods/show" }
+  end
+end
 
-    create_or_update_pm(@pm)
+delete '/users/:user_id/payment_methods/:payment_method_id',
+  auth: [ :user ],
+  provides: [ :json ],
+  requires: [ :user, :payment_method ] do
 
-    rabl :"users/payment_methods/show"
+  was_default = @payment_method.default
+
+  unless @payment_method.destroy
+    halt 400, @payment_method.errors
   end
 
-  delete '/:id', :provides => [ :json ] do |_, pm_id|
-    halt 404 unless pm = @user.payment_methods.get(pm_id.to_i)
-
-    was_default = pm.default
-
-    unless pm.destroy
-      halt 500, pm.report_errors
-    end
-
-    if @user.payment_methods.empty?
-      @user.create_default_pm
-    end
-
-    if was_default
-      @user.payment_methods.first.update!({ default: true })
-    end
-
-    200
+  if @user.payment_methods.empty?
+    @user.create_default_pm
   end
 
+  if was_default
+    @user.payment_methods.first.update!({ default: true })
+  end
+
+  blank_halt!
 end
