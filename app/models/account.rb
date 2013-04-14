@@ -23,6 +23,10 @@ class Account
 
   validates_with_method :currency, :method => :valid_currency?
 
+  validates_presence_of   :label, message: 'You must provide a name for the account!'
+  validates_uniqueness_of :label, :scope => [ :user_id ],
+    message: "You already have such an account."
+
   is :transactable
 
   def valid_currency?
