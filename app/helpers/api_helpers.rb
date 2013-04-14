@@ -2,34 +2,6 @@ module Sinatra
 
   # TODO: accept nested parameters
   module API
-    class Config
-      attr_accessor :filters
-
-      def initialize()
-        @filters = {}
-      end
-
-      def filter(resource_id, &callback)
-        @filters[resource_id.to_sym] ||= []
-        @filters[resource_id.to_sym] << callback
-      end
-    end
-
-    class << self
-      def configure
-        @@config = Config.new
-
-        yield(@@config) if block_given?
-      end
-
-      def config
-        raise "Sinatra::API has not been configured, access to #config is blocked." unless @@config
-
-        @@config
-      end
-    end
-
-
     module Helpers
       def api_call?
         (request.accept || '').to_s.include?('json')
@@ -186,12 +158,6 @@ module Sinatra
 
         instance_variable_set('@'+r, resource)
 
-        # if filters = API::config.filters[r.to_sym]
-        #   filters.each { |filter|
-        #     filter.call(self, resource)
-        #   }
-        # end
-
         resource
       end
 
@@ -227,8 +193,6 @@ module Sinatra
         @parent_resource = nil
 
         if api_call?
-          # puts "its an api call"
-          # puts request.content_type
           request.body.rewind
           body = request.body.read.to_s || ''
           unless body.empty?
@@ -244,7 +208,6 @@ module Sinatra
         end
       end
 
-      app.set(:exclusivity_filters, {})
       app.set(:requires) do |*resources|
         condition do
           @required = resources.collect { |r| r.to_s }
