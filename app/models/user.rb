@@ -2,6 +2,7 @@ require 'resolv'
 
 class User
   include DataMapper::Resource
+  include Pibi::Helpers
 
   property :id, Serial
 
@@ -29,7 +30,7 @@ class User
   # property :is_public,      Boolean, default: false
 
   belongs_to :link, self, :child_key => [ :link_id ], :required => false
-  has n, :links, self, :child_key => [ :link_id ], :constraint => :set_nil
+  has n, :links, self, :child_key => [ :link_id ], :constraint => :destroy
 
   has n, :notices, :constraint => :destroy
   has n, :accounts, :constraint => :destroy
@@ -65,6 +66,18 @@ class User
     end
   end
 
+  before :save do
+    if attribute_dirty?(:password)
+      if password != password_confirmation
+        errors.add :password, "Passwords do not match."
+        throw :halt
+      end
+
+      attribute_set(:password, User.encrypt(password))
+      attribute_set(:password_confirmation, User.encrypt(password_confirmation))
+    end
+  end
+
   def account
     self.accounts.first
   end
@@ -80,6 +93,12 @@ class User
         verify_email
       end
     end
+  end
+
+  before :destroy do
+    # self.link && self.link.destroy
+    # self.links.destroy
+    self.notices.destroy!
   end
 
   after :create do
@@ -120,6 +139,8 @@ class User
   # it will also link any previously linked users to this account
   # to the master (there should be only one master account)
   def link_to(master, soft = false)
+    return true if master == self
+
     master.links << self
 
     self.link = master
@@ -176,7 +197,7 @@ class User
   # is kept in the notice's @data field for use when sending the notice email
   def generate_temporary_password
 
-    pw = Pibi.password_salt
+    pw = tiny_salt
     # puts ">> User: generating a temporary password '#{pw}' <<"
     update!({ password: User.encrypt(pw), auto_password: true })
 
