@@ -32,3 +32,7 @@ end
 node(:categories) do |u|
   u.categories.map { |c| partial "categories/_show", object: c }
 end
+
+node(:preferences) do |s|
+  s.preferences
+end

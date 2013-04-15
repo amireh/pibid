@@ -147,11 +147,12 @@ patch '/users/:user_id',
     },
 
     password: nil,
-    password_confirmation: nil
+    password_confirmation: nil,
+    preferences: nil
   })
 
   api_consume! :preferences do |prefs|
-    @user.save_preferences(@user.preferences.deep_merge(prefs))
+    @user.update_preferences(prefs)
   end
 
   api_consume! :current_password
@@ -170,9 +171,7 @@ patch '/users/:user_id',
     halt 400, @user.errors
   end
 
-  if params[:no_object]
-    halt 200, {}.to_json
-  end
+  blank_halt! if params[:no_object]
 
   respond_to do |f|
     f.json { rabl :"users/show", object: @user }

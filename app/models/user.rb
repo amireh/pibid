@@ -48,6 +48,7 @@ class User
     message: "There's already an account registered to this email address."
 
   # is :locatable
+  is :preferencable, {}, Pibi::Preferences.defaults['user']
 
   # --------- -------
   # DISABLED: LOCKING

@@ -1,0 +1,24 @@
+{
+  "user": {
+    "workspace": {
+      "animable": true,
+      "sidebar": {
+        "compact": false
+      }
+    }
+  },
+
+  "app": {
+    "animes": {
+      "toggling_duration": 250
+    },
+
+    "pulses": {
+      "runtime_preferences": 1000,
+      "flash": {
+        "error": 10000,
+        "notice": 2500
+      }
+    }
+  }
+}

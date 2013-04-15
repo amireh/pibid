@@ -8,8 +8,8 @@ configure do |app|
 
     unless app.settings.test?
       provider :facebook,
-        app.settings.credentials['facebook']['key'],
-        app.settings.credentials['facebook']['secret']
+        app.settings.credentials['facebook'][app.settings.environment.to_s]['key'],
+        app.settings.credentials['facebook'][app.settings.environment.to_s]['secret']
 
       provider :google_oauth2,
         app.settings.credentials['google']['key'],

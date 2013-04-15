@@ -10,6 +10,14 @@ options '*' do
   halt 200
 end
 
+get '/preferences', :provides => [ :json ] do
+  respond_to do |f|
+    f.json do
+      Pibi::Preferences.defaults['app'].to_json
+    end
+  end
+end
+
 def blank_halt!(rc = 200)
   halt 200, '{}'
 end

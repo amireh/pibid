@@ -7,16 +7,24 @@ configure do |app|
   enable :cross_origin
   use Rack::Session::Cookie, :secret => settings.credentials['cookie']['secret']
 
-  # load everything
   require 'app/models/transaction'
+  require 'lib/pibi'
+
+  Pibi::Preferences.init
 
   [ 'lib', 'app/helpers', 'app/models', 'app/controllers' ].each { |d|
     Dir.glob("#{d}/**/*.rb").each { |f| require f }
   }
 
-  require "config/initializers/datamapper"
+  # Grant access to default preferences just like any :preferencable model
+  #
+  # @example
+  #   DefaultPreferences.p['foo']['bar'] = 123
+  #   DefaultPreferences.p['foo.bar']           # => 123
+  #
+  DefaultPreferences = User.new
+  DefaultPreferences.__override_preferences(Pibi::Preferences.defaults)
 
-  Rabl.register!
 
   set :views, File.join($ROOT, 'app', 'views')
   set :protection, :except => [:http_origin]
@@ -28,6 +36,8 @@ configure do |app|
   set :allow_credentials, true
   set :max_age, "1728000"
 
+  require "config/initializers/datamapper"
+  require "config/initializers/rabl"
   require "config/initializers/omniauth"
   require "config/initializers/#{settings.environment}"
 end
