@@ -34,7 +34,7 @@ configure do |app|
 
   # CORS
   set :allow_methods, [ :get, :post, :put, :patch, :delete, :options ]
-  set :allow_origin, :any
+  set :allow_origin, settings.allowed_origin
   set :allow_headers, ["*", "Content-Type", "Accept", "AUTHORIZATION", "Cache-Control", 'X-Requested-With']
   set :allow_credentials, true
   set :max_age, "1728000"
