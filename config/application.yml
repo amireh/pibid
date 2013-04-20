@@ -26,6 +26,7 @@ production:
   <<: *common
 
 test:
+  <<: *common
   courier:
     enabled: false
   credentials:
