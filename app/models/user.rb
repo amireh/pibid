@@ -4,6 +4,14 @@ class User
   include DataMapper::Resource
   include Pibi::Helpers
 
+  def self.default_categories=(names = [])
+    @@default_categories = names
+  end
+
+  def self.default_categories
+    @@default_categories
+  end
+
   property :id, Serial
 
   property :name,     String, length: 255, required: true, message: 'We need your name.'
@@ -109,11 +117,16 @@ class User
     self.payment_methods.create({ name: "Cheque" })
     self.payment_methods.create({ name: "Credit Card" })
 
-    self.categories.create({ name: "Food" })
-    self.categories.create({ name: "Car Gas" })
-    self.categories.create({ name: "Utility" })
-    self.categories.create({ name: "Everyday Expenses" })
-    self.categories.create({ name: "Shopping" })
+    self.class.default_categories.each do |cname|
+      self.categories.create({ name: cname, icon: cname.sanitize })
+    end
+
+    # self.categories.create({ name: "Food",      icon: "food" })
+    # self.categories.create({ name: "Car Gas",   icon: "car-gas" })
+    # self.categories.create({ name: "Utility",   icon: "utility" })
+    # self.categories.create({ name: "Luxury",    icon: "luxury" })
+    # self.categories.create({ name: "Shopping",  icon: "shopping" })
+    # self.categories.create({ name: "Dinner",    icon: "dinner" })
   end
 
   class << self

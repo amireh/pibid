@@ -1,7 +1,9 @@
 object @transaction => ''
 extends "transactions/show"
 
-attributes :flow_type, :frequency, :active, :next_billing_date
+attributes :flow_type, :frequency, :next_billing_date
+
+node(:active) do |tx| !!(tx.active) end
 
 node(:recurs_on) do |tx|
   recurrence = tx.recurs_on

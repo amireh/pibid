@@ -2,6 +2,25 @@ development: &common
   courier:
     enabled:  true
     from:     'noreply@pibibot.com'
+  user:
+    default_categories: [
+      'Food',
+      'Car',
+      'Utility',
+      'Luxury',
+      'Shopping',
+      'Outing',
+      'Travel',
+      'Household',
+      'Hobbies',
+      'Clothes',
+      'Gifts',
+      'Electronics',
+      'Music',
+      'Fun',
+      'Online Gaming',
+      'Phone'
+    ]
 
 production:
   <<: *common

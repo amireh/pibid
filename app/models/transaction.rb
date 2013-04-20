@@ -61,7 +61,7 @@ class Transaction
 
   before :save do
     if !self.amount || self.amount.to_f <= 0
-      self.errors.add :amount, 'Transaction amount must be greater than 0'
+      self.errors.add :amount, 'Transaction amount must be a positive number.'
       throw :halt
     end
   end

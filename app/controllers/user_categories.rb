@@ -7,6 +7,10 @@ post '/users/:user_id/categories',
     name: nil
   })
 
+  api_optional!({
+    icon: nil
+  })
+
   @category = @user.categories.create(api_params)
 
   unless @category.saved?
@@ -35,6 +39,10 @@ patch '/users/:user_id/categories/:category_id',
 
   api_required!({
     name: nil
+  })
+
+  api_optional!({
+    icon: nil
   })
 
   unless @category.update(api_params)

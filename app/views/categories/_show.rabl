@@ -1,3 +1,3 @@
 object @category
 
-attributes :name, :id
+attributes :name, :id, :icon

@@ -12,11 +12,11 @@ describe Transaction do
   it "should reject a tx with a negative amount" do
     tx = @account.transactions.create({ amount: -1 })
     tx.saved?.should be_false
-    tx.all_errors.first.should match(/greater than 0/)
+    tx.all_errors.first.should match(/must be/)
 
     tx = @account.transactions.create({ amount: 0 })
     tx.saved?.should be_false
-    tx.all_errors.first.should match(/greater than 0/)
+    tx.all_errors.first.should match(/must be/)
   end
 
   it "should convert to account currency" do

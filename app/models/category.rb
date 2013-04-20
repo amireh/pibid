@@ -5,6 +5,7 @@ class Category
 
   property :id, Serial
   property :name, String, length: 250
+  property :icon, String, length: 35, required: false, default: 'default'
 
   belongs_to :user, required: true
   has n, :transactions, :through => Resource, :constraint => :skip
