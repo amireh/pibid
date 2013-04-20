@@ -15,7 +15,7 @@ task :environment do
     end
   end
 
-  require File.expand_path('app', File.dirname(__FILE__))
+  require File.expand_path('config/boot', File.dirname(__FILE__))
 end
 
 task :default => :environment do
