@@ -4,6 +4,7 @@ class Currency
   property :id,     Serial
   property :name,   String, length: 3, unique: true
   property :rate,   Decimal, scale: 2, required: true
+  property :symbol, String, length: 3, default: lambda { |c,*_| c.name }
 
   class << self
     def valid?(cur)

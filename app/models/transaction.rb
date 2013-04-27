@@ -12,7 +12,8 @@ class Transaction
   # was made, and if it differs from the account currency, the proper
   # exchange rate conversion will be made in the account balance and NOT
   # the transaction itself.
-  property :currency,     String, length: 3, default: lambda { |r,*_| r.account.currency }
+  property :currency,       String, length: 3, default: lambda { |r,*_| r.account.currency }
+  property :currency_rate,  Decimal, scale: 2, default: lambda { |r,*_| Currency[r.account.currency].rate }
 
   property :note,         Text, default: ""
 
@@ -90,6 +91,11 @@ class Transaction
       deductible_amount = to_account_currency(dd_amount, dd_currency)
       deduct(deductible_amount)
 
+      # update to the latest currency rate if currency has changed
+      if attribute_dirty?(:currency)
+        self.currency_rate = Currency[self[:currency]].rate
+      end
+
       # addition:
       # nothing special to do here since the new amount and currency
       # are set already, see #to_account_currency
@@ -103,6 +109,7 @@ class Transaction
       #  is dirty, which needs the account to be updated, and clean, to update)
       self.account.save!
     end
+
   end
 
   before :destroy do
@@ -123,7 +130,7 @@ class Transaction
 
   protected
 
-  def to_account_currency(amount = self[:amount], mine = self[:currency])
+  def to_account_currency(amount = self[:amount], mine = self[:currency], my_rate = self[:currency_rate])
     Currency[self.account[:currency]].from(Currency[mine], amount)
   end
 end

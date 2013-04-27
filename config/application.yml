@@ -1,5 +1,5 @@
 development: &common
-  allowed_origin: '*'
+  allowed_origin: ''
   courier:
     enabled:  true
     from:     'noreply@pibibot.com'
@@ -25,7 +25,7 @@ development: &common
 
 production:
   <<: *common
-  allowed_origin: ''
+  # allowed_origin: 'http://pibi.kodoware.com'
 
 test:
   <<: *common
