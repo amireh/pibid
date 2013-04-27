@@ -1,7 +1,7 @@
 namespace :pibi do
   desc "set transaction currency rates for those that don't have it"
   task :tx_currency_rates => :environment do
-    transies = Transaction.all({ currency_rate: nil })
+    transies = Transaction.all
 
     puts "Fixing #{transies.count} transies"
 

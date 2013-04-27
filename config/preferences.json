@@ -5,7 +5,13 @@
       "sidebar": {
         "compact": false
       }
-    }
+    },
+    "currencies": [
+      "USD",
+      "EUR",
+      "JPY",
+      "JOD"
+    ]
   },
 
   "app": {

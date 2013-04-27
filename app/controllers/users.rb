@@ -151,6 +151,8 @@ patch '/users/:user_id',
     preferences: nil
   })
 
+  no_object  = params[:no_object]; params.delete(:no_object)
+
   api_consume! :preferences do |prefs|
     @user.update_preferences(prefs)
   end
@@ -171,7 +173,7 @@ patch '/users/:user_id',
     halt 400, @user.errors
   end
 
-  blank_halt! if params[:no_object]
+  blank_halt! if no_object
 
   respond_to do |f|
     f.json { rabl :"users/show", object: @user }

@@ -8,7 +8,8 @@ namespace :pibi do
 
     puts "[pibi:currencies] retrieving latest exchange rates from Google Currencies..."
 
-    Money.default_bank = Money::Bank::GoogleCurrency.new
+    bank = Money.default_bank = Money::Bank::GoogleCurrency.new
+    bank.flush_rates
 
     puts "[pibi:currencies] retrived, populating..."
     Currency.destroy
@@ -17,10 +18,12 @@ namespace :pibi do
         iso  = centry[1][:iso_code]
         symbol = centry[1][:symbol]
         rate = 1.to_money( iso ).exchange_to(:USD).dollars
+        next if rate <= 0.0
+        # rate = 1.to_money( :USD ).exchange_to(iso).dollars
 
         c = Currency.create({
           name:   iso,
-          rate:   rate,
+          rate:   (1 / rate).round(2),
           symbol: symbol
         })
 
