@@ -7,8 +7,24 @@ get '/sessions/pulse', auth: [ :user ] do
 end
 
 post '/sessions', auth: [ :guest ], provides: [ :json ] do
-  unless u = authenticate(params[:email], params[:password])
-    halt 401, 'Bad credentials.'
+  api_required!({
+    email: lambda { |v|
+      if !v || v.to_s.empty? || !is_email?(v)
+        return "Please enter a valid email address."
+      end
+    },
+
+    password: lambda { |v|
+      if !v || v.to_s.length <= User::MinPasswordLength
+        return "The password you entered does not seem to be correct."
+      end
+    }
+  })
+
+  unless u = authenticate(api_param(:email), api_param(:password))
+    u = User.new
+    u.errors.add :email, 'The email or password you entered were incorrect.'
+    halt 400, u.errors
   end
 
   authorize(u)

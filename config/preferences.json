@@ -1,11 +1,28 @@
 {
   "user": {
     "workspace": {
-      "animable": true,
-      "sidebar": {
-        "compact": false
+      "animable": true
+    },
+    "drilldown": {
+      "show_segment_headings": true,
+      "show_payment_methods":  true,
+      "use_currency_symbols":  false,
+      "compact_mode": false
+    },
+
+    "keybindings": {
+      "drilldown": {
+        "new_deposit": "ctrl+alt+d",
+        "new_withdrawal": "ctrl+alt+e",
+        "next": "ctrl+alt+right",
+        "back": "ctrl+alt+left",
+        "toggle_headings": "ctrl+alt+t"
+      },
+      "editor": {
+        "save": "ctrl+alt+s"
       }
     },
+    "skin": "classic",
     "currencies": [
       "USD",
       "EUR",

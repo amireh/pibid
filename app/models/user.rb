@@ -12,6 +12,8 @@ class User
     @@default_categories
   end
 
+  MinPasswordLength = 7
+
   property :id, Serial
 
   property :name,     String, length: 255, required: true, message: 'We need your name.'
@@ -49,8 +51,8 @@ class User
 
   validates_confirmation_of :password,
     message: 'Passwords must match.'
-  validates_length_of       :password, :min => 7,
-    message: 'Password is too short! It must be at least 7 characters long.'
+  validates_length_of       :password, :min => MinPasswordLength,
+    message: "Password is too short, it must be at least #{MinPasswordLength} characters long."
 
   validates_uniqueness_of :email, :scope => :provider,
     message: "There's already an account registered to this email address."

@@ -1,7 +1,7 @@
 namespace :pibi do
   desc "seeds the given user with some random data for testing"
-  task :seed, [ :user_id, :year ] => :environment do |t, args|
-    user_id, year = args[:user_id], args[:year]
+  task :seed, [ :user_id, :year,:nr_transies ] => :environment do |t, args, nr_transies|
+    user_id, year, nr_transies = args[:user_id], args[:year], args[:nr_transies].to_i || 25
 
     unless u = User.get(user_id)
       raise ArgumentError.new("No such user with id #{user_id}")
@@ -27,7 +27,7 @@ namespace :pibi do
     end
 
     # some withdrawals
-    for i in 0..25 do
+    for i in 0..nr_transies do
       tx = u.accounts.first.withdrawals.create({
         amount: rand(1000) + 1,
         currency: rand_currency(),
@@ -37,7 +37,7 @@ namespace :pibi do
       tx.save
     end
 
-    for i in 0..25 do
+    for i in 0..nr_transies do
       tx = u.accounts.first.deposits.create({
         amount: rand(1000) + 1,
         currency: rand_currency(),
