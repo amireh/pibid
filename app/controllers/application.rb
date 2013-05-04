@@ -1,12 +1,10 @@
 before do
   content_type :json unless request.request_method == 'OPTIONS'
-
-  # response['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
-  # response['Access-Control-Allow-Headers'] = 'origin, x-requested-with, content-type, accept'
 end
 
 options '*' do
-  response['Access-Control-Allow-Headers'] = 'origin, x-requested-with, content-type, accept'
+  response['Access-Control-Max-Age'] = '1728000'
+
   halt 200
 end
 
