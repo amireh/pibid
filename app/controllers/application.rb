@@ -8,10 +8,22 @@ options '*' do
   halt 200
 end
 
+get '/pulse' do
+  blank_halt!
+end
+
 get '/preferences', :provides => [ :json ] do
   respond_to do |f|
     f.json do
       Pibi::Preferences.defaults['app'].to_json
+    end
+  end
+end
+
+get '/currencies', auth: [ :user ], provides: [ :json ] do
+  respond_to do |f|
+    f.json do
+      rabl :"currencies/index"
     end
   end
 end

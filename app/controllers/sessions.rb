@@ -2,6 +2,10 @@ get '/sessions', auth: [ :user ], provides: [ :json ] do
   rabl :"sessions/show"
 end
 
+get '/sessions/:sink', auth: [ :user ], provides: [ :json ] do
+  rabl :"sessions/show"
+end
+
 get '/sessions/pulse', auth: [ :user ] do
   blank_halt!
 end

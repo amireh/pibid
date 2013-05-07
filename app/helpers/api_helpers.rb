@@ -109,6 +109,10 @@ module Sinatra
         @api[:optional].deep_merge(@api[:required]).deep_merge(q)
       end
 
+      def api_clear!()
+        @api = { required: {}, optional: {} }
+      end
+
       # Attempt to locate a resource based on an ID supplied in a request parameter.
       #
       # If the param map contains a resource id (ie, :folder_id),
@@ -163,7 +167,7 @@ module Sinatra
 
       private
 
-      def parse_api_argument(params, name, cnd, type)
+      def parse_api_argument(p, name, cnd, type)
         cnd ||= lambda { |*_| true }
         name = name.to_s
 
@@ -171,17 +175,17 @@ module Sinatra
           raise ArgumentError, 'API Argument type must be either :required or :optional'
         end
 
-        if !params.has_key?(name)
+        if !p.has_key?(name)
           if type == :required
             halt 400, "Missing required parameter :#{name}"
           end
         else
           if cnd.respond_to?(:call)
-            errmsg = cnd.call(params[name])
+            errmsg = cnd.call(p[name])
             halt 400, { :"#{name}" => errmsg } if errmsg && errmsg.is_a?(String)
           end
 
-          @api[type][name.to_sym] = params[name]
+          @api[type][name.to_sym] = p[name]
         end
       end
     end
@@ -203,6 +207,7 @@ module Sinatra
             rescue ::JSON::ParserError => e
               puts e.message
               puts e.backtrace
+              halt 400, "Malformed JSON content"
             end
           end
         end

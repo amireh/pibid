@@ -56,11 +56,11 @@ module Sinatra
       @current_account ||= current_user.accounts.first
     end
 
-    def authenticate(email, pw)
+    def authenticate(email, pw, encrypt = true)
       User.first({
         email:    email,
         provider: 'pibi',
-        password: User.encrypt(pw)
+        password: encrypt ? User.encrypt(pw) : pw
       })
     end
 

@@ -46,4 +46,101 @@ helpers do
 
     rabl :"transactions/drilldowns/#{@drilldown}" if do_render
   end
+
+  def account_transactions_create(p = params)
+    api_required!({
+      amount:     nil,
+      type: lambda { |t|
+        unless [ 'withdrawal', 'deposit' ].include?(t)
+          return "Invalid type '#{t}', accepted types are: deposit and withdrawal"
+        end
+      }
+    }, p)
+
+    api_optional!({
+      note:       nil,
+      occured_on: lambda { |d|
+        begin; d.to_date(false); rescue; return "Invalid date '#{d}', expected format: MM/DD/YYYY"; end
+        true
+      },
+      currency:   nil,
+      categories: nil,
+      payment_method: lambda { |pm_id|
+        unless @pm = @account.user.payment_methods.get(pm_id)
+          return "No such payment method."
+        end
+      }
+    }, p)
+
+    type = nil
+    api_consume! :type do |v| type = v end
+
+    api_transform! :amount do |a| a.to_f end
+    api_transform! :occured_on do |d| d.to_date end
+    api_transform! :payment_method do |_| @pm end
+
+    categories = []
+    api_consume! :categories do |v| categories = v end
+
+    transaction = @account.send("#{type}s").new(api_params)
+
+    unless transaction.save
+      halt 400, transaction.errors
+    end
+
+    if categories.any?
+      categories.each do |cid|
+        unless c = @account.user.categories.get(cid)
+          next
+        end
+
+        transaction.categories << c
+      end
+
+      transaction.save
+    end
+
+    transaction
+  end
+
+  def account_transactions_update(transaction = @transaction, p = params)
+    api_optional!({
+      amount:     nil,
+      note:       nil,
+      occured_on: lambda { |d|
+        begin; d.to_date(false); rescue; return 'Invalid date, expected format: MM/DD/YYYY'; end
+        true
+      },
+      currency:   nil,
+      categories: nil,
+      payment_method: lambda { |pm_id|
+        unless @pm = @account.user.payment_methods.get(pm_id)
+          return "No such payment method."
+        end
+      }
+    }, p)
+
+    api_transform! :occured_on do |d| d.to_date end
+    api_transform! :payment_method do |_| @pm end
+
+    api_consume! :categories do |categories|
+      transaction.categories = []
+
+      categories.each do |cid|
+        unless c = @account.user.categories.get(cid)
+          next
+        end
+
+        transaction.categories << c
+      end
+
+      transaction.save
+    end
+
+    unless transaction.update(api_params)
+      halt 400, transaction.errors
+    end
+
+    transaction
+  end
 end

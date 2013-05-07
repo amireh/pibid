@@ -2,6 +2,9 @@ object @user
 
 attributes :id, :name, :email, :gravatar_email
 
+node(:links) do |u|
+  u.links.map { |u| u.provider }
+end
 node :account do |a|
   partial "accounts/show", object: @user.account
 end
@@ -17,6 +20,9 @@ node(:media) do |u|
     },
     payment_methods: {
       url: u.url(true) + '/payment_methods'
+    },
+    journal: {
+      url: u.url(true) + '/journal'
     }
   }
 end

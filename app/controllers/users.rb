@@ -180,7 +180,6 @@ patch '/users/:user_id',
   end
 end
 
-
   # Accepts:
   # => name: String
   # => email: String
