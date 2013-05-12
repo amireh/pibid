@@ -40,4 +40,13 @@ class Account
   def url(root = false)
     root ? "/accounts/#{id}" : "#{user.url}/accounts/#{id}"
   end
+
+  before :update do
+    if attribute_dirty?(:currency)
+      old_iso = original_attributes[Account.currency]
+      cur_iso = self[:currency]
+
+      self.balance = Currency[cur_iso].from(old_iso, self[:balance])
+    end
+  end
 end

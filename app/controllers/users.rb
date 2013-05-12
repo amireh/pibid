@@ -159,16 +159,6 @@ patch '/users/:user_id',
 
   api_consume! :current_password
 
-  api_consume! :currency do |currency|
-    currency = currency.to_s
-
-    if current_account.currency != currency
-      unless current_account.update({ currency: currency })
-        halt 400, current_account.errors
-      end
-    end
-  end
-
   unless @user.update(api_params)
     halt 400, @user.errors
   end
