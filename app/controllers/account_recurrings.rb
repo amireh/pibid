@@ -13,7 +13,7 @@ end
 def build_rtx(rtx)
   @transaction = rtx
 
-  api_transform! :amount    do |v| v.to_f   end
+  api_transform! :amount    do |v| v.to_f.round(2).to_s end
   api_transform! :flow_type do |v| v.to_sym end
   api_transform! :frequency do |v| v.to_sym end
   # api_transform! :payment_method do |_| @pm end

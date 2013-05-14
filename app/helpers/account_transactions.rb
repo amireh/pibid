@@ -78,7 +78,7 @@ helpers do
     type = nil
     api_consume! :type do |v| type = v end
 
-    api_transform! :amount do |a| a.to_f end
+    api_transform! :amount do |a| a.to_f.round(2).to_s end
     api_transform! :occured_on do |d| d.pibi_to_datetime end
     # api_transform! :payment_method_id do |_| @pm end
 
@@ -126,7 +126,7 @@ helpers do
       }
     }, p)
 
-    api_transform! :amount do |a| a.to_f end
+    api_transform! :amount do |a| a.to_f.round(2).to_s end
     api_transform! :occured_on do |d| d.pibi_to_datetime end
     # api_transform! :payment_method_id do |_| @pm end
 
