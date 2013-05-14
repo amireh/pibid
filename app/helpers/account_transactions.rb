@@ -126,6 +126,7 @@ helpers do
       }
     }, p)
 
+    api_transform! :amount do |a| a.to_f end
     api_transform! :occured_on do |d| d.pibi_to_datetime end
     # api_transform! :payment_method_id do |_| @pm end
 
