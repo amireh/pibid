@@ -65,7 +65,7 @@ class String
   end
 
   # expected format: "MM/DD/YYYY"
-  def to_date(graceful = true)
+  def pibi_to_datetime(graceful = true)
     m,d,y = self.split(/\/|\-/)
     begin
       DateTime.new(y.to_i,m.to_i,d.to_i)
@@ -76,3 +76,25 @@ class String
   end
 end
 
+class Fixnum
+  def pibi_to_datetime(graceful = true)
+    begin
+      Time.at(self).to_datetime
+    rescue RuntimeError => e
+      raise e unless graceful
+      DateTime.now
+    end
+  end
+end
+
+class Object
+  def pibi_to_datetime(*args)
+    if self.is_a?(String) || self.is_a?(Fixnum)
+      super(*args)
+    elsif self.is_a?(Float)
+      self.to_i.pibi_to_datetime(*args)
+    else
+      self.to_s.pibi_to_datetime(*args)
+    end
+  end
+end

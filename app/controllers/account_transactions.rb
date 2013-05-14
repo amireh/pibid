@@ -1,4 +1,4 @@
-get '/accounts/:account_id/transactions/:year',
+get '/accounts/:account_id/transactions/drilldown/:year',
   auth: [ :user ],
   requires: [ :account ],
   provides: [ :json ] do
@@ -6,7 +6,7 @@ get '/accounts/:account_id/transactions/:year',
   render_transactions_for(params[:year].to_i, 0, 0)
 end
 
-get '/accounts/:account_id/transactions/:year/:month',
+get '/accounts/:account_id/transactions/drilldown/:year/:month',
   auth: [ :user ],
   requires: [ :account ],
   provides: [ :json ] do
@@ -16,7 +16,7 @@ get '/accounts/:account_id/transactions/:year/:month',
   rabl :"transactions/index"
 end
 
-get '/accounts/:account_id/transactions/:year/:month/:day',
+get '/accounts/:account_id/transactions/drilldown/:year/:month/:day',
   auth: [ :user ],
   requires: [ :account ],
   provides: [ :json ] do
@@ -26,7 +26,7 @@ get '/accounts/:account_id/transactions/:year/:month/:day',
   rabl :"transactions/index"
 end
 
-get '/accounts/:account_id/transactions',
+get '/accounts/:account_id/transactions/drilldown',
   auth: :user,
   requires: [ :account ],
   provides: [ :json ] do
@@ -59,6 +59,16 @@ post '/accounts/:account_id/transactions',
   requires: [ :account ] do
 
   @transaction = account_transactions_create(params)
+
+  respond_with @transaction do |f|
+    f.json { rabl :"transactions/show" }
+  end
+end
+
+get '/accounts/:account_id/transactions/:transaction_id',
+  auth: :user,
+  provides: [ :json ],
+  requires: [ :account, :transaction ] do
 
   respond_with @transaction do |f|
     f.json { rabl :"transactions/show" }

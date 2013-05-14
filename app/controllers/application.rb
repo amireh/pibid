@@ -21,6 +21,8 @@ get '/preferences', :provides => [ :json ] do
 end
 
 get '/currencies', auth: [ :user ], provides: [ :json ] do
+  # halt 400, ''
+
   respond_to do |f|
     f.json do
       rabl :"currencies/index"

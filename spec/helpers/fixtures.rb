@@ -102,12 +102,23 @@ module Fixtures
     end
   end # UserFixture
 
+  class AccountFixture < Fixture
+    def build(user, params)
+      @params = accept(params, {
+        label:  "Some Account #{Fixtures.gen_id}",
+        currency: "USD",
+        balance: 0.0,
+        user:   user
+      })
+
+      user.accounts.create(@params)
+    end
+  end # UserFixture
+
 
   class DepositFixture < Fixture
     def build(account, params = {})
       raise ":deposit fixture requires a valid @account" unless account
-
-      puts "in :deposit build"
 
       @params = accept(params, {
         amount:     rand(50) + 1,
@@ -175,6 +186,14 @@ def fixture(resource, o = {})
     Fixtures[:user].build({
       email: "spec#{Fixtures.gen_id}@pibibot.com"
     }.merge(o)).first
+  when :account
+    user = o[:user] || @user
+    if !user
+      fixture :user
+      user = @u
+    end
+
+    Fixtures[:account].build(user, o)
   when :deposit
     @tx = Fixtures[:deposit].build(@account, o)
   when :category

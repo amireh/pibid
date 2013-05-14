@@ -16,7 +16,7 @@ def build_rtx(rtx)
   api_transform! :amount    do |v| v.to_f   end
   api_transform! :flow_type do |v| v.to_sym end
   api_transform! :frequency do |v| v.to_sym end
-  api_transform! :payment_method do |_| @pm end
+  # api_transform! :payment_method do |_| @pm end
 
   categories = []
   api_consume! :categories do |v| categories = v end
@@ -111,7 +111,7 @@ post '/accounts/:account_id/recurrings',
     yearly_recurs_on_day:  nil,
     yearly_recurs_on_month: nil,
     active: nil,
-    payment_method: lambda { |pm_id|
+    payment_method_id: lambda { |pm_id|
       unless @pm = @account.user.payment_methods.get(pm_id)
         return "No such payment method."
       end
@@ -155,7 +155,7 @@ patch '/accounts/:account_id/recurrings/:recurring_id',
     yearly_recurs_on_day:  nil,
     yearly_recurs_on_month: nil,
     active: nil,
-    payment_method: lambda { |pm_id|
+    payment_method_id: lambda { |pm_id|
       unless @pm = @account.user.payment_methods.get(pm_id)
         return "No such payment method."
       end

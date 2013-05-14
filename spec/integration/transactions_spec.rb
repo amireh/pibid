@@ -16,7 +16,7 @@ describe "Transactions" do
   it "Retrieving yearly transies" do
     for i in 0..5 do
       month = i < 2 ? 1 : 2
-      @a.deposits.create({ amount: 5, occured_on: "#{month}/06/2012".to_date })
+      @a.deposits.create({ amount: 5, occured_on: "#{month}/06/2012".pibi_to_datetime })
     end
 
     rc = api_call get "/accounts/#{@account.id}/transactions/2012"
@@ -26,11 +26,11 @@ describe "Transactions" do
 
   scenario "Retrieving monthly transies" do
     2.times do
-      @a.deposits.create({ amount: 5, occured_on: "2/06/2012".to_date })
+      @a.deposits.create({ amount: 5, occured_on: "2/06/2012".pibi_to_datetime })
     end
 
     4.times do
-      @a.deposits.create({ amount: 5, occured_on: "3/06/2012".to_date })
+      @a.deposits.create({ amount: 5, occured_on: "3/06/2012".pibi_to_datetime })
     end
 
     rc = api_call get "/accounts/#{@account.id}/transactions/2012/2"
@@ -48,11 +48,11 @@ describe "Transactions" do
 
   scenario "Retrieving daily transies" do
     2.times do
-      @a.deposits.create({ amount: 5, occured_on: "2/06/2012".to_date })
+      @a.deposits.create({ amount: 5, occured_on: "2/06/2012".pibi_to_datetime })
     end
 
     4.times do
-      @a.deposits.create({ amount: 5, occured_on: "2/07/2012".to_date })
+      @a.deposits.create({ amount: 5, occured_on: "2/07/2012".pibi_to_datetime })
     end
 
     rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=2&day=6"

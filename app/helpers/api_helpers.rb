@@ -167,7 +167,7 @@ module Sinatra
 
       private
 
-      def parse_api_argument(p, name, cnd, type)
+      def parse_api_argument(h = params, name, cnd, type)
         cnd ||= lambda { |*_| true }
         name = name.to_s
 
@@ -175,17 +175,17 @@ module Sinatra
           raise ArgumentError, 'API Argument type must be either :required or :optional'
         end
 
-        if !p.has_key?(name)
+        if !h.has_key?(name)
           if type == :required
             halt 400, "Missing required parameter :#{name}"
           end
         else
           if cnd.respond_to?(:call)
-            errmsg = cnd.call(p[name])
+            errmsg = cnd.call(h[name])
             halt 400, { :"#{name}" => errmsg } if errmsg && errmsg.is_a?(String)
           end
 
-          @api[type][name.to_sym] = p[name]
+          @api[type][name.to_sym] = h[name]
         end
       end
     end

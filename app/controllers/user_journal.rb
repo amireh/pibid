@@ -1,9 +1,18 @@
 def validate_journal_entries(entries, required_keys)
+  unless entries.is_a?(Array)
+    halt 400, "Malformed journal structure: entry listing must be an array, got #{entries.class.name}"
+  end
+
   entries.each do |entry|
+    unless entry.is_a?(Hash)
+      halt 400, "Malformed journal structure: expected entry to be a Hash, got #{entry.class.name}"
+    end
+
     required_keys.each do |key|
       return "Missing required entry data '#{key}'" if !entry.has_key?(key)
     end
 
+    # Resolve the scope
     if required_keys.include?('scope')
       scope = entry['scope'].split(':')
       scope, collection = scope.first, scope.last
@@ -51,6 +60,14 @@ def validate_journal_entries(entries, required_keys)
       entry[:collection]     = resolved_collection
       entry[:collection_id]  = collection
     end
+
+    # Validate 'data' key integrity
+    if required_keys.include?('data')
+      unless entry['data'].is_a?(Hash)
+        halt 400, "Malformed journal structure: expected :data to be a Hash, got #{entry['data'].class.name}"
+      end
+    end
+
   end
 end
 
@@ -59,10 +76,11 @@ post '/users/:user_id/journal',
   provides: [ :json ],
   requires: [ :user ] do
 
+  # puts "Journal parameters: #{params}"
 
   api_optional!({
     create: lambda  { |entries| validate_journal_entries(entries, [ 'id', 'scope', 'data' ]) },
-    update: lambda  { |entries| validate_journal_entries(entries, [ 'id', 'scope', 'shadow', 'data' ]) },
+    update: lambda  { |entries| validate_journal_entries(entries, [ 'id', 'scope', 'data' ]) },
     destroy: lambda { |entries| validate_journal_entries(entries, [ 'id', 'scope' ]) },
   })
 
@@ -71,11 +89,14 @@ post '/users/:user_id/journal',
   shadows = {}
 
   # some nice stats
-  processed = { total: 0, create: 0, update: 0, destroy: 0 }
+  processed = { total: 0, create: [], update: [], destroy: [] }
 
-  mark_as_processed = lambda { |optype|
+  mark_as_processed = lambda { |optype, entry|
     processed[:total] += 1
-    processed[optype] += 1
+    processed[optype] << {
+      id: entry['id'],
+      scope: entry['scope']
+    }
   }
 
   mark_as_dropped = lambda { |optype, entry, *err|
@@ -95,7 +116,7 @@ post '/users/:user_id/journal',
     if !model || !model.destroy
       mark_as_dropped.call :destroy, entry
     else
-      mark_as_processed.call :destroy
+      mark_as_processed.call :destroy, entry
     end
 
     # delete any create or update entries that are operating on this resource
@@ -121,7 +142,7 @@ post '/users/:user_id/journal',
 
     rc, err = catch :halt do
       api_clear!
-      resource = self.send(factory, entry['data'])
+      resource = self.send(factory, entry['data'] || {})
       nil
     end
 
@@ -134,7 +155,7 @@ post '/users/:user_id/journal',
     # puts "mapping shadow #{entry['scope']}:#{entry['id']} to #{resource.id}"
     shadows[ entry['scope'] ][ entry['id'] ] = resource.id
 
-    mark_as_processed.call :create
+    mark_as_processed.call :create, entry
   end
 
   entries[:update].each do |entry|
@@ -153,7 +174,7 @@ post '/users/:user_id/journal',
 
     rc, err = catch :halt do
       api_clear!
-      resource = self.send(factory, resource, entry['data'])
+      resource = self.send(factory, resource, entry['data'] || {})
       nil
     end
 
@@ -162,7 +183,7 @@ post '/users/:user_id/journal',
       next
     end
 
-    mark_as_processed.call :update
+    mark_as_processed.call :update, entry
   end
 
   @journal = {

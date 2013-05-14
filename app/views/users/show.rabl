@@ -23,6 +23,9 @@ node(:media) do |u|
     },
     journal: {
       url: u.url(true) + '/journal'
+    },
+    stats: {
+      url: u.url(true) + '/stats'
     }
   }
 end
@@ -31,9 +34,9 @@ node(:payment_methods) do |u|
   u.payment_methods.map { |pm| partial "payment_methods/show", object: pm }
 end
 
-node(:currencies) do |u|
-  Currency.all.map { |c| partial "currencies/_show", object: c }
-end
+# node(:currencies) do |u|
+#   Currency.all.map { |c| partial "currencies/_show", object: c }
+# end
 
 node(:categories) do |u|
   u.categories.map { |c| partial "categories/_show", object: c }

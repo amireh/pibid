@@ -60,12 +60,15 @@ helpers do
     api_optional!({
       note:       nil,
       occured_on: lambda { |d|
-        begin; d.to_date(false); rescue; return "Invalid date '#{d}', expected format: MM/DD/YYYY"; end
-        true
+        begin
+          d.pibi_to_datetime(false)
+        rescue
+          return 'Invalid date, expected String format: MM/DD/YYYY, or epoch integer timestamp'
+        end
       },
       currency:   nil,
       categories: nil,
-      payment_method: lambda { |pm_id|
+      payment_method_id: lambda { |pm_id|
         unless @pm = @account.user.payment_methods.get(pm_id)
           return "No such payment method."
         end
@@ -76,8 +79,8 @@ helpers do
     api_consume! :type do |v| type = v end
 
     api_transform! :amount do |a| a.to_f end
-    api_transform! :occured_on do |d| d.to_date end
-    api_transform! :payment_method do |_| @pm end
+    api_transform! :occured_on do |d| d.pibi_to_datetime end
+    # api_transform! :payment_method_id do |_| @pm end
 
     categories = []
     api_consume! :categories do |v| categories = v end
@@ -108,20 +111,23 @@ helpers do
       amount:     nil,
       note:       nil,
       occured_on: lambda { |d|
-        begin; d.to_date(false); rescue; return 'Invalid date, expected format: MM/DD/YYYY'; end
-        true
+        begin
+          d.pibi_to_datetime(false)
+        rescue
+          return 'Invalid date, expected format: MM/DD/YYYY'
+        end
       },
       currency:   nil,
       categories: nil,
-      payment_method: lambda { |pm_id|
+      payment_method_id: lambda { |pm_id|
         unless @pm = @account.user.payment_methods.get(pm_id)
           return "No such payment method."
         end
       }
     }, p)
 
-    api_transform! :occured_on do |d| d.to_date end
-    api_transform! :payment_method do |_| @pm end
+    api_transform! :occured_on do |d| d.pibi_to_datetime end
+    # api_transform! :payment_method_id do |_| @pm end
 
     api_consume! :categories do |categories|
       transaction.categories = []

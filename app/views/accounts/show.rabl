@@ -8,7 +8,8 @@ node(:media) do |a|
   {
     url:    a.url,
     transactions: {
-      url:  a.url(true) + '/transactions'
+      url:  a.url(true) + '/transactions',
+      drilldown: a.url(true) + '/transactions/drilldown'
     },
     recurrings: {
       url: a.url(true) + '/recurrings'

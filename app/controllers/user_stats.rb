@@ -1,3 +1,16 @@
+get '/users/:user_id/stats/categories/yearly/spendings', provides: [ :json ], auth: [ :user ], requires: [ :user ] do |cid|
+  # s = { names: [], spendings: [] }
+  s = []
+  @user.categories.each do |c|
+    # s[:names] << c.name
+    s << { name: c.name, balance: c.balance_for(c.transactions_in(range_from_params, { type: Withdrawal })).to_f.abs.round(2) }
+  end
+
+  respond_to do |f|
+    f.json { s.to_json }
+  end
+end
+
 route_namespace '/users/:user_id/stats' do
 
   condition do
@@ -10,8 +23,8 @@ route_namespace '/users/:user_id/stats' do
     b, e = nil
 
     begin
-      b = params[:begin].to_date(false).to_time
-      e = params[:end].to_date(false).to_time
+      b = params[:begin].pibi_to_datetime(false).to_time
+      e = params[:end].pibi_to_datetime(false).to_time
     rescue ArgumentError => e
       halt 400, "Invalid date range in [#{b}, #{e}]. Accepted format: MM-DD-YYYY"
     end
@@ -56,14 +69,6 @@ route_namespace '/users/:user_id/stats' do
     s.to_json
   end
 
-  get '/categories/yearly/spendings.json' do |cid|
-    s = { names: [], spendings: [] }
-    current_user.categories.each do |c|
-      s[:names] << c.name
-      s[:spendings] << c.balance_for(c.transactions_in(range_from_params, { type: Withdrawal })).to_f.abs.round(2)
-    end
-    s.to_json
-  end
 
   get '/categories/top_spending.json' do
     s = []
