@@ -3,7 +3,7 @@ class PaymentMethod
 
   default_scope(:default).update(:order => [ :name.asc ])
 
-  Colors = [ 'EF7901', '98BF0D', 'D54421', '01B0EC', '7449F1', 'B147A3' ]
+  Colors = [ 'FFBB33', '99CC00', 'CC0000', '33B5E5', 'AA66CC', 'B147A3' ]
 
   belongs_to :user, required: true
 
