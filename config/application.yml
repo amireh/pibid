@@ -1,5 +1,5 @@
 development: &common
-  allowed_origin: ''
+  allowed_origin: 'https://www.pibiapp.com'
   courier:
     enabled:  true
     from:     'noreply@pibibot.com'
