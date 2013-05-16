@@ -5,22 +5,29 @@ development: &common
     from:     'noreply@pibibot.com'
   user:
     default_categories: [
-      'Food',
+      'Bills',
       'Car',
-      'Utility',
-      'Luxury',
-      'Shopping',
-      'Outing',
-      'Travel',
-      'Household',
-      'Hobbies',
+      'Cinema',
       'Clothes',
-      'Gifts',
       'Electronics',
-      'Music',
+      'Food',
       'Fun',
-      'Online Gaming',
-      'Phone'
+      'Gaming',
+      'Gifts',
+      'Groceries',
+      'Hobbies',
+      'Household',
+      'Luxury',
+      'Medicine',
+      'Music',
+      'Nightlife',
+      'Online',
+      'Phone',
+      'Salary',
+      'School',
+      'Shopping',
+      'Travel',
+      'Utility'
     ]
 
 production:
