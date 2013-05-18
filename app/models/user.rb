@@ -46,6 +46,7 @@ class User
   has n, :accounts, :constraint => :destroy
   has n, :categories, :constraint => :destroy
   has n, :payment_methods, :constraint => :destroy
+  has n, :journals, :constraint => :destroy
 
   attr_accessor :password_confirmation
 

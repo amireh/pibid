@@ -13,11 +13,13 @@ feature "Journaling" do
 
       it "should locate a scope" do
         data = {
-          account_id: @account.id,
+          scopes: {
+            account_id: @account.id
+          },
+
           create: [
             {
               id:     1234,
-              shadow: true,
               scope: "account:transactions",
               data: {
               }

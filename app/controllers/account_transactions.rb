@@ -3,7 +3,11 @@ get '/accounts/:account_id/transactions/drilldown/:year',
   requires: [ :account ],
   provides: [ :json ] do
 
-  render_transactions_for(params[:year].to_i, 0, 0)
+  @transies = transactions_in(:yearly, params[:year])
+
+  respond_with @transies do |f|
+    f.json { rabl :"transactions/index", collection: @transies }
+  end
 end
 
 get '/accounts/:account_id/transactions/drilldown/:year/:month',
@@ -11,9 +15,11 @@ get '/accounts/:account_id/transactions/drilldown/:year/:month',
   requires: [ :account ],
   provides: [ :json ] do
 
-  render_transactions_for(params[:year].to_i, params[:month].to_i, 0, false)
+  @transies = transactions_in(:monthly, params[:year], params[:month])
 
-  rabl :"transactions/index"
+  respond_with @transies do |f|
+    f.json { rabl :"transactions/index", collection: @transies }
+  end
 end
 
 get '/accounts/:account_id/transactions/drilldown/:year/:month/:day',
@@ -21,37 +27,12 @@ get '/accounts/:account_id/transactions/drilldown/:year/:month/:day',
   requires: [ :account ],
   provides: [ :json ] do
 
-  render_transactions_for(params[:year].to_i, params[:month].to_i, params[:day].to_i, false)
+  @transies = transactions_in(:daily, params[:year], params[:month], params[:day])
 
-  rabl :"transactions/index"
+  respond_with @transies do |f|
+    f.json { rabl :"transactions/index", collection: @transies }
+  end
 end
-
-get '/accounts/:account_id/transactions/drilldown',
-  auth: :user,
-  requires: [ :account ],
-  provides: [ :json ] do
-
-  year  = Time.now.year
-  month = 0
-  day   = 0
-
-  if params[:year]
-    year = params[:year].to_i if params[:year].to_i != 0
-  end
-
-  if params[:month]
-    month = params[:month].to_i if params[:month].to_i != 0
-  end
-
-  if params[:day]
-    day = params[:day].to_i if params[:day].to_i != 0
-  end
-
-  render_transactions_for(year,month,day, false)
-
-  rabl :"transactions/index"
-end
-
 
 post '/accounts/:account_id/transactions',
   auth: :user,

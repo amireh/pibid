@@ -1,53 +1,29 @@
-helpers do
-  def render_transactions_for(year = Time.now.year, month = Time.now.month, day = Time.now.day, do_render = true)
-    year  = year.to_i   if year.is_a? String
-    month = month.to_i  if month.is_a? String
-    day   = day.to_i    if day.is_a? String
+require 'app/models/journal'
+
+module AccountTransactionsHelpers
+  def transactions_in(type, y, m = nil, d = nil)
+    y = (y || 0).to_i if (y || '').is_a? String
+    m = (m || 0).to_i if (m || '').is_a? String
+    d = (d || 0).to_i if (d || '').is_a? String
 
     # make sure the given date is sane
     begin
-      @date = Time.new(year, month == 0 ? 1 : month, day == 0 ? 1 : day)
+      case type
+      when :yearly
+        raise ArgumentError if y == 0
+        m, d = 1, 1
+      when :monthly
+        d = 1
+      when :daily
+      end
+
+      current_account.send("#{type}_transactions", Time.new(y, m, d))
     rescue ArgumentError => e
-      halt 400, "Invalid transaction period YYYY/MM/DD: '#{year}/#{month}/#{day}'"
+      halt 400, "Invalid drilldown segment [YYYY/MM/DD]: '#{y}/#{m}/#{d}'"
     end
-
-    if day > 0
-      # daily transaction view
-      @drilldown = "daily"
-
-      @transies = current_account.daily_transactions(Time.new(year,month,day))
-      # @drilled_transies = { "0" => @transies }
-    elsif month > 0
-      # monthly transaction view
-      @drilldown = "monthly"
-      @transies = current_account.monthly_transactions(Time.new(year, month, 1))
-
-      # partition into days
-      # @drilled_transies = {}
-      # @transies.each { |tx|
-      #   @drilled_transies[tx.occured_on.day] ||= []
-      #   @drilled_transies[tx.occured_on.day] <<  tx
-      # }
-    else
-      # yearly transaction view
-      @drilldown = "yearly"
-      @transies = current_account.yearly_transactions(Time.new(year, 1, 1))
-
-      # partition into months
-      # @drilled_transies = {}#Array.new(13, [])
-      # @drilled_transies = Array.new(13, [])
-      # @transies.each { |tx|
-      #   @drilled_transies[tx.occured_on.month] ||= []
-      #   @drilled_transies[tx.occured_on.month] <<  tx
-      # }
-    end
-
-    @balance = current_account.balance_for(@transies)
-
-    rabl :"transactions/drilldowns/#{@drilldown}" if do_render
   end
 
-  def account_transactions_create(p = params)
+  def self.account_transactions_create(p = params)
     api_required!({
       amount:     nil,
       type: lambda { |t|
@@ -68,11 +44,12 @@ helpers do
       },
       currency:   nil,
       categories: nil,
-      payment_method_id: lambda { |pm_id|
-        unless @pm = @account.user.payment_methods.get(pm_id)
-          return "No such payment method."
-        end
-      }
+      payment_method_id: nil
+      # payment_method_id: lambda { |pm_id|
+      #   unless @pm = @account.user.payment_methods.get(pm_id)
+      #     return "No such payment method."
+      #   end
+      # }
     }, p)
 
     type = nil
@@ -119,11 +96,12 @@ helpers do
       },
       currency:   nil,
       categories: nil,
-      payment_method_id: lambda { |pm_id|
-        unless @pm = @account.user.payment_methods.get(pm_id)
-          return "No such payment method."
-        end
-      }
+      payment_method_id: nil
+      # payment_method_id: lambda { |pm_id|
+      #   unless @pm = @account.user.payment_methods.get(pm_id)
+      #     return "No such payment method."
+      #   end
+      # }
     }, p)
 
     api_transform! :amount do |a| a.to_f.round(2).to_s end
@@ -150,4 +128,10 @@ helpers do
 
     transaction
   end
+end
+
+helpers AccountTransactionsHelpers
+
+configure do |app|
+  Journal.register_factory("account:transactions", :create, AccountTransactionsHelpers.method(:account_transactions_create))
 end
