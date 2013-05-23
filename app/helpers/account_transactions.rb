@@ -1,6 +1,6 @@
 require 'app/models/journal'
 
-module AccountTransactionsHelpers
+helpers do
   def transactions_in(type, y, m = nil, d = nil)
     y = (y || 0).to_i if (y || '').is_a? String
     m = (m || 0).to_i if (m || '').is_a? String
@@ -23,7 +23,7 @@ module AccountTransactionsHelpers
     end
   end
 
-  def self.account_transactions_create(p = params)
+  def account_transactions_create(p = params)
     api_required!({
       amount:     nil,
       type: lambda { |t|
@@ -128,10 +128,4 @@ module AccountTransactionsHelpers
 
     transaction
   end
-end
-
-helpers AccountTransactionsHelpers
-
-configure do |app|
-  Journal.register_factory("account:transactions", :create, AccountTransactionsHelpers.method(:account_transactions_create))
 end

@@ -1,6 +1,6 @@
 describe Journal do
   before(:all) do
-    module Journal
+    class Journal
       public :validate!, :validate_structure!, :resolve_scope!, :resolve_collection!
     end
 
@@ -14,86 +14,159 @@ describe Journal do
   end
 
   context "Instance methods" do
-    it '#validate_structure!' do
-      j = @u.journals.new({ "scopemap" => 123})
-      expect { j.validate_structure! }.to raise_error
-      should_reject_with(j, :structure, "must be hash")
+    context "Structure validation" do
+      it " scopemap" do
+        j = @u.journals.new({
+          scopemap: 123
+        })
+        expect { j.validate_structure! }.to raise_error
+        should_reject_with(j, :structure, "scope map must be hash")
+      end
 
+      it "scope listing" do
+        j = @u.journals.new({
+          entries: []
+        })
 
-      j = @u.journals.new({ "entries" => [] })
-      expect { j.validate_structure! }.to raise_error
-      should_reject_with(j, :structure, "must be hash")
+        expect { j.validate_structure! }.to raise_error
+        should_reject_with(j, :structure, "scope listing must be hash")
+      end
 
-      j = @u.journals.new({
-        "entries" => { "foo" => [] }
-      })
-      expect { j.validate_structure! }.to raise_error
-      should_reject_with(j, :structure, "unrecognized operation")
+      it "an unmapped scope" do
+        j = @u.journals.new({
+          entries: {
+            bar: {}
+          }
+        })
+
+        expect { j.validate_structure! }.to raise_error
+        should_reject_with(j, :structure, "missing scope identifier")
+      end
+
+      it "scope collections" do
+        j = @u.journals.new({
+          scopemap: { bar_id: 1 },
+          entries: {
+            bar: []
+          }
+        })
+
+        expect { j.validate_structure! }.to raise_error
+        should_reject_with(j, :structure, "collections must be hash")
+      end
+
+      it "collection operations" do
+        j = @u.journals.new({
+          scopemap: { account_id: 1 },
+          entries: {
+            account: {
+              transactions: []
+            }
+          }
+        })
+
+        expect { j.validate_structure! }.to raise_error
+        should_reject_with(j, :structure, "collection operations must be hash")
+      end
+
+      it "scope collection operation listing" do
+        j = @u.journals.new({
+          scopemap: { account_id: 1 },
+          entries: {
+            account: {
+              transactions: {
+                create: {}
+              }
+            }
+          }
+        })
+
+        expect { j.validate_structure! }.to raise_error
+        should_reject_with(j, :structure, "operation entries must be array")
+      end
+
+      it "an invalid operation" do
+        j = @u.journals.new({
+          scopemap: {
+            account_id: 1
+          },
+          entries: {
+            account: {
+              transactions: {
+                foo: []
+              }
+            }
+          }
+        })
+
+        expect { j.validate_structure! }.to raise_error
+        should_reject_with(j, :structure, "unrecognized operation")
+      end
+
     end
 
-    it '#validate' do
-      j = @u.journals.new({
-        "scopemap" => {
-          "account_id" => @a.id
-        },
-        "entries" => {
-          "create" => [{
-            "id"    => 1234,
-            "scope" => "account:transactions",
-            "data"  => {}
-          }]
-        }
-      })
+    context "Operation validation" do
+      it "a valid operation" do
+        j = @u.journals.new({
+          scopemap: {
+            account_id: @a.id
+          },
+          entries: {
+            account: {
+              transactions: {
+                create: [{
+                  id: 'c123',
+                  data: {}
+                }]
+              }
+            }
+          }
+        })
 
-      expect { j.validate!(:create, [ 'id', 'scope', 'data' ]) }.not_to raise_error
+        expect { j.validate!(:create, j.entries["account"]["transactions"]) }.not_to raise_error
+      end
 
-      # missing id
-      j = @u.journals.new({
-        "scopemap" => {
-          "account_id" => @a.id
-        },
-        "entries" => {
-          "create" => [{
-            "scope" => "account:transactions",
-            "data"  => {}
-          }]
-        }
-      })
+      it "missing a key" do
+        j = @u.journals.new({
+          scopemap: {
+            account_id: @a.id
+          },
+          entries: {
+            account: {
+              transactions: {
+                create: [{
+                  data: {}
+                }]
+              }
+            }
+          }
+        })
 
-      expect { j.validate!(:create, [ 'id', 'scope', 'data' ]) }.to raise_error
-      should_reject_with(j, :entries, "missing id")
+        expect { j.validate!(:create, j.entries["account"]["transactions"]) }.to raise_error
+        should_reject_with(j, :entries, "missing id")
+      end
 
-      # missing scope
-      j = @u.journals.new({
-        "scopemap" => {
-          "account_id" => @a.id
-        },
-        "entries" => {
-          "create" => [{
-            "id"    => 1234,
-            "data"  => {}
-          }]
-        }
-      })
+      it "invalid data" do
+        j = @u.journals.new({
+          scopemap: {
+            account_id: @a.id
+          },
+          entries: {
+            account: {
+              transactions: {
+                create: [{
+                  id: 'c123',
+                  data: []
+                }]
+              }
+            }
+          }
+        })
 
-      expect { j.validate!(:create, [ 'id', 'scope', 'data' ]) }.to raise_error
-      should_reject_with(j, :entries, "missing scope")
+        expect { j.validate!(:create, j.entries["account"]["transactions"]) }.to raise_error
+        should_reject_with(j, :entries, "expected data to be hash")
+      end
 
-      # missing data
-      j = @u.journals.new({
-        "scopemap" => {
-          "account_id" => @a.id
-        },
-        "entries" => {
-          "create" => [{
-            "id"    => 1234,
-            "scope" => "account:transactions"
-          }]
-        }
-      })
-
-      expect { j.validate!(:create, [ 'id', 'scope', 'data' ]) }.to raise_error
-      should_reject_with(j, :entries, "missing data")
     end
 
     context "Scope resolution" do
@@ -232,56 +305,6 @@ describe Journal do
 
 
     end # Scope collection resolution
-
-    context "Committing" do
-
-      it 'processing a DELETE entry' do
-        @t = valid! fixture(:deposit)
-
-        j = @u.journals.new({
-          "scopemap" => {
-            "account_id" => @a.id
-          },
-          "entries" => {
-            "delete" => [{
-              "id" => @t.id,
-              "scope" => "account:transactions"
-            }]
-          }
-        })
-
-        expect { j.commit }.not_to raise_error
-        j.processed[:total].should == 1
-      end
-
-
-      it 'processing a CREATE entry' do
-        j = @u.journals.new({
-          "scopemap" => {
-            "account_id" => @a.id
-          },
-          "entries" => {
-            "create" => [{
-              "id"    => "c123",
-              "scope" => "account:transactions",
-              "data"  => {
-                "amount"  => 5.95,
-                "type"    => "deposit"
-              }
-            }]
-          }
-        })
-
-        j.operator = app_instance
-
-        expect { j.commit }.not_to raise_error
-        j.processed[:total].should == 1
-        @u.account.deposits.length.should == 1
-        @u.account.deposits.first.id.should == j.shadowmap['c123']
-      end
-
-
-    end
 
   end
 end

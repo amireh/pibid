@@ -4,31 +4,35 @@ post '/users/:user_id/journal',
   requires: [ :user ] do
 
   # puts "Journal parameters: #{params}"
-  graceful = params[:graceful] || true
+  graceful = params.has_key?('graceful') ? params['graceful'] : true
 
   api_optional!({
-    create: lambda  { |entries| validate_journal_entries(entries, [ 'id', 'scope', 'data' ]) },
-    update: lambda  { |entries| validate_journal_entries(entries, [ 'id', 'scope', 'data' ]) },
-    destroy: lambda { |entries| validate_journal_entries(entries, [ 'id', 'scope' ]) },
+    scopemap: nil,
+    entries:  nil
   })
 
-  api_consume! :create do |v|  entries[:create]  = v end
-  api_consume! :update do |v|  entries[:update]  = v end
-  api_consume! :destroy do |v| entries[:destroy] = v end
+  @journal = @user.journals.new(api_params)
+  @account = @user.account
 
-  api_clear!
+  @journal.operator = self
+  @journal.register_factory("account_transactions", :create, method(:account_transactions_create))
+  @journal.register_factory("account_transactions", :update, method(:account_transactions_update))
+  @journal.add_callback(:on_process) do |*_|
+    api_clear!
+  end
 
-  Journal.add_callback(:on_process, lambda { api_clear! })
-
-  @journal = Journal.new(entries[:create], entries[:update], entries[:destroy])
-
-  catch :halt do
-    @journal.commit({ graceful: true })
+  begin
+    @journal.commit({ graceful: graceful })
+  rescue ArgumentError => e
+    halt 400, @journal.errors
   end
 
   unless @journal.errors.empty?
     halt 400, @journal.errors
   end
+
+  # puts @journal.processed.inspect
+  # puts @journal.dropped.inspect
 
   respond_with @journal do |f|
     f.json do
