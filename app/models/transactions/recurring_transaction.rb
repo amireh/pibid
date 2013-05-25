@@ -101,7 +101,8 @@ class Recurring < Transaction
       amount: self.amount,
       currency: self.currency,
       note: self.note,
-      payment_method: self.payment_method
+      payment_method: self.payment_method,
+      categories: self.categories
     })
 
     unless t.valid? && t.saved?
@@ -110,6 +111,8 @@ class Recurring < Transaction
 
     # stamp the commit
     self.update({ last_commit: now })
+
+    t
   end
 
   private

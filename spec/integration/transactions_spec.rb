@@ -19,7 +19,7 @@ describe "Transactions" do
       @a.deposits.create({ amount: 5, occured_on: "#{month}/06/2012".pibi_to_datetime })
     end
 
-    rc = api_call get "/accounts/#{@account.id}/transactions/2012"
+    rc = api_call get "/accounts/#{@account.id}/transactions/drilldown/2012"
     rc.should succeed
     rc.body["transactions"].length.should == 6
   end
@@ -33,15 +33,11 @@ describe "Transactions" do
       @a.deposits.create({ amount: 5, occured_on: "3/06/2012".pibi_to_datetime })
     end
 
-    rc = api_call get "/accounts/#{@account.id}/transactions/2012/2"
+    rc = api_call get "/accounts/#{@account.id}/transactions/drilldown/2012/2"
     rc.should succeed
     rc.body["transactions"].length.should == 2
 
-    rc = api_call get "/accounts/#{@account.id}/transactions/2012/3"
-    rc.should succeed
-    rc.body["transactions"].length.should == 4
-
-    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=3"
+    rc = api_call get "/accounts/#{@account.id}/transactions/drilldown/2012/3"
     rc.should succeed
     rc.body["transactions"].length.should == 4
   end
@@ -55,23 +51,21 @@ describe "Transactions" do
       @a.deposits.create({ amount: 5, occured_on: "2/07/2012".pibi_to_datetime })
     end
 
-    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=2&day=6"
+    rc = api_call get "/accounts/#{@account.id}/transactions/drilldown/2012/2/6"
     rc.should succeed
     rc.body["transactions"].length.should == 2
 
-    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=2&day=7"
+    rc = api_call get "/accounts/#{@account.id}/transactions/drilldown/2012/2/7"
     rc.should succeed
     rc.body["transactions"].length.should == 4
   end
 
-  scenario "Out-of-range daily transies" do
-    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=2&day=35"
-    rc.http_rc.should == 400
-  end
-
-  scenario "Out-of-range monthly transies" do
-    rc = api_call get "/accounts/#{@account.id}/transactions?year=2012&month=14"
-    rc.http_rc.should == 400
+  scenario "Out-of-range drilldown" do
+    api { get "/accounts/#{@account.id}/transactions/drilldown/2012/2/35" }.should  fail(400, 'Invalid segment')
+    api { get "/accounts/#{@account.id}/transactions/drilldown/2012/13/30" }.should fail(400, 'Invalid segment')
+    api { get "/accounts/#{@account.id}/transactions/drilldown/bad" }.should        fail(400, 'Invalid segment')
+    api { get "/accounts/#{@account.id}/transactions/drilldown/2012/bad" }.should   fail(400, 'Invalid segment')
+    api { get "/accounts/#{@account.id}/transactions/drilldown/2012/1/bad" }.should fail(400, 'Invalid segment')
   end
 
   scenario "Creating a transaction" do

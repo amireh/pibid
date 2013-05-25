@@ -5,326 +5,584 @@ feature "Journaling" do
 
   before :each do
     sign_in @user
+    @account = @account.refresh
+    @account.transactions.destroy
   end
 
-  context "Validating a Journal" do
+  it "doing nothing" do
+    rc = api_call post "/users/#{@user.id}/journal", {}
+    rc.should succeed
+  end
 
-    context "Scopes & Collections" do
-
-      it "should locate a scope" do
-        data = {
-          account_id: @account.id,
-          create: [
-            {
-              id:     1234,
-              shadow: true,
-              scope: "account:transactions",
+  it "creating a resource" do
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            create: [{
+              id: 'c1234',
               data: {
+                amount: 123,
+                type: "deposit"
+              }
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    @account = @account.refresh
+    @account.transactions.count.should == 1
+    t = @account.transactions.first
+    t.id.should == rc.body["journal"]["shadowmap"]["account"]["transactions"]["c1234"]
+  end
+
+  it "creating a user-scoped collection resource" do
+    data = {
+      entries: {
+        user: {
+          categories: {
+            create: [{
+              id: 'c1234',
+              data: {
+                name: "My Category"
+              }
+            }]
+          }
+        }
+      }
+    }
+
+    nr_categories = @user.categories.length
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    @user.refresh.categories.length.should == nr_categories+1
+  end
+
+  it "creating multiple resources" do
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            create: [{
+              id: 'c1234',
+              data: {
+                amount: 123,
+                type: "deposit"
+              }
+            }, {
+              id: 'c1235',
+              data: {
+                amount: 456,
+                type: "deposit"
+              }
+            }]
+          }
+        }
+      }
+    }
+
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    rc.body["journal"]["processed"]["account"]["transactions"]["create"].length.should == 2
+    rc.body["journal"]["shadowmap"]["account"]["transactions"].length.should == 2
+    @account.refresh.transactions.count.should == 2
+  end
+
+  it "duplicate shadow resources" do
+    data = {
+      graceful: false,
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            create: [{
+              id: 'c1234',
+              data: {
+                amount: 123,
+                type: "deposit"
+              }
+            }, {
+              id: 'c1234',
+              data: {
+                amount: 456,
+                type: "deposit"
+              }
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should fail(400, 'Duplicate shadow resource')
+  end
+
+  it "overwriting a shadow resource" do
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            create: [{
+              id: 'c1234',
+              data: {
+                amount: 123,
+                type: "deposit"
+              }
+            }, {
+              id: 'c1234',
+              data: {
+                amount: 456,
+                type: "deposit"
+              }
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    @account.refresh.transactions.count.should == 1
+    @account.refresh.transactions.first.amount.should == 456
+  end
+
+  it "updating a resource" do
+    @transaction = valid! fixture(:deposit, { amount: 5.0 })
+
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            update: [{
+              id: @transaction.id,
+              data: { amount: 10 }
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    rc.body["journal"]["processed"]["account"]["transactions"]["update"].length.should == 1
+    @transaction.refresh.amount.to_i.should == 10
+  end
+
+  it "updating a shadow entry" do
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            create: [          {
+              id: 'c1234',
+              data: {
+                amount: 5,
+                type: "deposit"
+              }
+            }],
+            update: [{
+              id: 'c1234',
+              data: {
+                amount: 10
+              }
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    rc.body["journal"]["processed"]["account"]["transactions"]["create"].length.should == 1
+    rc.body["journal"]["processed"]["account"]["transactions"]["update"].length.should == 1
+    @account.refresh.transactions.last.amount.to_i.should == 10
+  end
+
+  it "deleting a resource" do
+    @transaction = valid! fixture(:deposit)
+
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            delete: [{
+              id: @transaction.id
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    @account.refresh.transactions.count.should == 0
+  end
+
+  it "deleting a non-existing resource" do
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            delete: [{
+              id: 10011111
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    rc.body["journal"]["processed"].should be_empty
+    rc.body["journal"]["dropped"].length.should == 1
+  end
+
+  it "updating a deleted resource" do
+    @transaction = valid! fixture(:deposit, { amount: 5.0 })
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+      entries: {
+        account: {
+          transactions: {
+            update: [{
+              id: @transaction.id,
+              data: { amount: 5 }
+            }],
+
+            delete: [{
+              id: @transaction.id
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    rc.body["journal"]["processed"].length.should == 1
+    rc.body["journal"]["dropped"].length.should == 1
+    @account.refresh.transactions.count.should == 0
+  end
+
+  context "Resources" do
+    context "Accounts" do
+      it "updating an account" do
+        data = {
+          scopemap: {
+          },
+          entries: {
+            user: {
+              accounts: {
+                update: [{
+                  id: @account.id,
+                  data: {
+                    currency: "EUR"
+                  }
+                }]
               }
             }
-          ]
+          }
         }
 
         rc = api_call post "/users/#{@user.id}/journal", data
         rc.should succeed
+        rc.body["journal"]["processed"]["user"]["accounts"]["update"].length.should == 1
+        @account.refresh.currency.should == 'EUR'
       end
+    end
 
-      it "should reject an invalid scope" do
+    context "Payment Methods" do
+      it "creating a pm" do
         data = {
-          accountsz_id: 1,
-          create: [
-            {
-              id: 1234,
-              shadow: true,
-              scope: "accountsz:transactions",
-              data: {
-              }
-            }
-          ]
-        }
-
-        rc = api_call post "/users/#{@user.id}/journal", data
-        rc.should fail(400, 'Invalid scope')
-      end
-
-      it "should require a scope identifier" do
-        data = {
-          create: [
-            {
-              id: 1234,
-              shadow: true,
-              scope: "account:transactions",
-              data: {
-              }
-            }
-          ]
-        }
-
-        rc = api_call post "/users/#{@user.id}/journal", data
-        rc.should fail(400, 'Missing scope identifier')
-      end
-
-
-      it "should require reject an invalid collection" do
-        data = {
-          account_id: @account.id,
-          create: [
-            {
-              id: 1234,
-              shadow: true,
-              scope: "account:transactionsxz",
-              data: {
-              }
-            }
-          ]
-        }
-
-        rc = api_call post "/users/#{@user.id}/journal", data
-        rc.should fail(400, 'Invalid collection')
-      end
-    end
-
-    context "Entries" do
-      it "should reject CREATE with no id" do
-        rc = api_call post "/users/#{@user.id}/journal", {
-          account_id: @account.id,
-          create: [{
-            data: {
-            }
-          }]
-        }
-        rc.should fail(400, 'Missing entry data id')
-      end
-
-      it "should reject CREATE with no scope" do
-        rc = api_call post "/users/#{@user.id}/journal", {
-          account_id: @account.id,
-          create: [{
-            id: 1234,
-            data: {
-            }
-          }]
-        }
-        rc.should fail(400, 'Missing entry data scope')
-      end
-
-      it "should reject CREATE with no data" do
-        rc = api_call post "/users/#{@user.id}/journal", {
-          account_id: @account.id,
-          create: [{
-            id: 1234,
-            scope: 'account:transactions'
-          }]
-        }
-        rc.should fail(400, 'Missing entry data data')
-      end
-
-      it "should reject UPDATE with no shadow" do
-        rc = api_call post "/users/#{@user.id}/journal", {
-          account_id: @account.id,
-          update: [{
-            id: 1234,
-            scope: 'account:transactions',
-            data: {}
-          }]
-        }
-        rc.should fail(400, 'Missing entry data shadow')
-      end
-    end # Entries
-  end # Validation
-
-  context "Processing a Journal" do
-    before(:each) do
-      @account = @account.refresh
-      @account.transactions.destroy
-    end
-
-    it "should process an empty journal" do
-      rc = api_call post "/users/#{@user.id}/journal", {}
-      rc.should succeed
-    end
-
-    it "should process a CREATE entry" do
-      data = {
-        account_id: @account.id,
-        create: [{
-          id: 1234, # should be discarded
-          scope: "account:transactions",
-          data: {
-            amount: 123,
-            type: "deposit"
-          }
-        }]
-      }
-
-      rc = api_call post "/users/#{@user.id}/journal", data
-      rc.should succeed
-      rc.body["journal"]["errors"].length.should == 0
-      @account.refresh.transactions.count.should == 1
-    end
-
-    it "should process multiple CREATE entry" do
-      data = {
-        account_id: @account.id,
-        create: [
-          {
-            id: 2, # should be discarded
-            scope: "account:transactions",
-            data: {
-              amount: 123,
-              type: "deposit"
-            }
+          scopemap: {
           },
-          {
-            id: 1, # should be discarded
-            scope: "account:transactions",
-            data: {
-              amount: 10,
-              type: "deposit"
+          entries: {
+            user: {
+              payment_methods: {
+                create: [{
+                  id: 'foobar',
+                  data: {
+                    name: 'Adooken'
+                  }
+                }]
+              }
             }
           }
-        ]
-      }
+        }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
-      rc.should succeed
-      rc.body["journal"]["errors"].length.should == 0
-      @account.refresh.transactions.count.should == 2
-    end
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["user"]["payment_methods"]["create"].length.should == 1
+      end
 
-    it "should validate shadow IDs" do
-      data = {
-        account_id: @account.id,
-        create: [
-          {
-            id: 1234, # should be discarded
-            scope: "account:transactions",
-            data: {
-              amount: 123,
-              type: "deposit"
-            }
+      it "updating a pm" do
+        pm = @user.payment_methods.create({name: "Adooken2"})
+
+        data = {
+          scopemap: {
           },
-          {
-            id: 1234, # should be discarded
-            scope: "account:transactions",
-            data: {
-              amount: 123,
-              type: "deposit"
+          entries: {
+            user: {
+              payment_methods: {
+                update: [{
+                  id: pm.id,
+                  data: {
+                    name: 'Adooken3'
+                  }
+                }]
+              }
             }
           }
-        ]
-      }
+        }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
-      rc.should fail(400, 'Duplicate shadow resource')
-    end
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["user"]["payment_methods"]["update"].length.should == 1
+        pm.refresh.name.should == 'Adooken3'
+      end
 
-    it "should process an UPDATE entry" do
-      @transaction = valid! fixture(:deposit, { amount: 5.0 })
+      it "deleting a pm" do
+        pm = @user.payment_methods.first
 
-      data = {
-        account_id: @account.id,
-        update: [{
-          id: @transaction.id,
-          shadow: false,
-          scope: "account:transactions",
-          data: {
-            amount: 10
-          }
-        }]
-      }
-
-      rc = api_call post "/users/#{@user.id}/journal", data
-      rc.should succeed
-      rc.body["journal"]["errors"].length.should == 0
-      @transaction.refresh.amount.to_i.should == 10
-    end
-
-    it "should update a shadow entry" do
-      data = {
-        account_id: @account.id,
-        create: [
-          {
-            id: 1234,
-            scope: "account:transactions",
-            data: {
-              amount: 5,
-              type: "deposit"
+        data = {
+          scopemap: {
+          },
+          entries: {
+            user: {
+              payment_methods: {
+                delete: [{
+                  id: pm.id
+                }]
+              }
             }
           }
-        ],
-        update: [{
-          id: 1234,
-          shadow: true,
-          scope: "account:transactions",
-          data: {
-            amount: 10
+        }
+
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["user"]["payment_methods"]["delete"].length.should == 1
+        pm.refresh.should be_false
+      end
+    end # Payment Methods
+
+    context "Categories" do
+      it "creating a category" do
+        data = {
+          scopemap: {
+          },
+          entries: {
+            user: {
+              categories: {
+                create: [{
+                  id: 'foobar',
+                  data: {
+                    name: 'Adooken'
+                  }
+                }]
+              }
+            }
           }
-        }]
-      }
+        }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
-      rc.should succeed
-      rc.body["journal"]["errors"].length.should == 0
-      rc.body["journal"]["processed"]["total"].should == 2
-      @account.refresh.transactions.last.amount.to_i.should == 10
-    end
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["user"]["categories"]["create"].length.should == 1
+      end
 
-    it "should DESTROY an entry" do
-      @transaction = valid! fixture(:deposit)
+      it "updating a category" do
+        c = @user.categories.create({ name: "Adooken2" })
 
-      data = {
-        account_id: @account.id,
-        destroy: [{
-          id: @transaction.id,
-          scope: 'account:transactions'
-        }]
-      }
-
-      rc = api_call post "/users/#{@user.id}/journal", data
-      rc.should succeed
-      rc.body["journal"]["errors"].length.should == 0
-      @account.refresh.transactions.count.should == 0
-    end
-
-    it "should not DESTROY a non-existing resource" do
-      data = {
-        account_id: @account.id,
-        destroy: [{
-          id: 12341234,
-          scope: 'account:transactions'
-        }]
-      }
-
-      rc = api_call post "/users/#{@user.id}/journal", data
-      rc.should succeed
-      rc.body["journal"]["errors"].length.should == 1
-    end
-
-    it "should not update a resource when a DESTROY entry for it exists" do
-      @transaction = valid! fixture(:deposit, { amount: 5.0 })
-      data = {
-        account_id: @account.id,
-        destroy: [{
-          id: @transaction.id,
-          scope: 'account:transactions'
-        }],
-
-        update: [{
-          id: @transaction.id,
-          scope: 'account:transactions',
-          shadow: false,
-          data: {
-            amount: 1000
+        data = {
+          scopemap: {
+          },
+          entries: {
+            user: {
+              categories: {
+                update: [{
+                  id: c.id,
+                  data: {
+                    name: 'Adooken3'
+                  }
+                }]
+              }
+            }
           }
-        }]
+        }
+
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["user"]["categories"]["update"].length.should == 1
+        c.refresh.name.should == 'Adooken3'
+      end
+
+      it "deleting a category" do
+        c = @user.categories.first
+
+        data = {
+          scopemap: {
+          },
+          entries: {
+            user: {
+              categories: {
+                delete: [{
+                  id: c.id
+                }]
+              }
+            }
+          }
+        }
+
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["user"]["categories"]["delete"].length.should == 1
+        c.refresh.should be_false
+      end
+    end # Categories
+
+    context "Recurrings" do
+      it "creating an rtx" do
+        data = {
+          scopemap: {
+            account_id: @account.id
+          },
+          entries: {
+            account: {
+              recurrings: {
+                create: [{
+                  id: 'c123',
+                  data: {
+                    note: "Salary",
+                    flow_type: "positive",
+                    amount: 5,
+                    frequency: "monthly",
+                    monthly_recurs_on_day: 5
+                  }
+                }]
+              }
+            }
+          }
+        }
+
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["account"]["recurrings"]["create"].length.should == 1
+      end
+
+      it "updating a category" do
+        rtx = @account.recurrings.create({
+          note: "Xyz",
+          flow_type: "positive",
+          amount: 5,
+          frequency: "yearly",
+          recurs_on: DateTime.new(Time.now.year, 1, 1)
+        })
+
+        data = {
+          scopemap: {
+            account_id: @account.id
+          },
+          entries: {
+            account: {
+              recurrings: {
+                update: [{
+                  id: rtx.id,
+                  data: {
+                    note: "Booyah"
+                  }
+                }]
+              }
+            }
+          }
+        }
+
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["account"]["recurrings"]["update"].length.should == 1
+        rtx.refresh.note.should == 'Booyah'
+      end
+
+      it "deleting an rtx" do
+        rtx = @account.recurrings.create({
+          note: "Xyz",
+          flow_type: "positive",
+          amount: 5,
+          frequency: "yearly",
+          recurs_on: DateTime.new(Time.now.year, 1, 1)
+        })
+
+        data = {
+          scopemap: {
+            account_id: @account.id
+          },
+          entries: {
+            account: {
+              recurrings: {
+                delete: [{
+                  id: rtx.id
+                }]
+              }
+            }
+          }
+        }
+
+        rc = api_call post "/users/#{@user.id}/journal", data
+        rc.should succeed
+        rc.body["journal"]["processed"]["account"]["recurrings"]["delete"].length.should == 1
+        rtx.refresh.should be_false
+      end
+    end # Categories
+
+    it "updating user" do
+      data = {
+        entries: {
+          user: {
+            users: {
+              update: [{
+                id: @user.id,
+                data: {
+                  preferences: {
+                    foo: 'bar'
+                  }
+                }
+              }]
+            }
+          }
+        }
       }
 
       rc = api_call post "/users/#{@user.id}/journal", data
       rc.should succeed
-      rc.body["journal"]["errors"].length.should == 0
-      rc.body["journal"]["processed"]["total"].should == 1
-      @account.refresh.transactions.count.should == 0
+      rc.body["journal"]["processed"]["user"]["users"]["update"].length.should == 1
+      @user.refresh.p('foo').should == 'bar'
     end
 
   end

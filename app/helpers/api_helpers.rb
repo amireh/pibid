@@ -113,6 +113,8 @@ module Sinatra
         @api = { required: {}, optional: {} }
       end
 
+      alias_method :api_reset!, :api_clear!
+
       # Attempt to locate a resource based on an ID supplied in a request parameter.
       #
       # If the param map contains a resource id (ie, :folder_id),

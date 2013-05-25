@@ -101,6 +101,44 @@ module Sinatra
   register UsersController
 end # Sinatra
 
+helpers do
+  def user_users_update(user, p = params)
+    user = current_user
+
+    api_optional!({
+      name: nil,
+      gravatar_email: nil,
+      email: nil,
+      preferences: nil,
+
+      current_password: lambda { |pw|
+        pw = (pw||'').to_s
+
+        if !pw.empty? && User.encrypt(pw) != current_user.password
+          return "The current password you entered is wrong."
+        end
+
+        true
+      },
+
+      password: nil,
+      password_confirmation: nil,
+      preferences: nil
+    }, p)
+
+    api_consume! :preferences do |prefs|
+      user.update_preferences(prefs)
+    end
+
+    api_consume! :current_password
+
+    unless user.update(api_params)
+      halt 400, user.errors
+    end
+
+    user
+  end
+end
 
 post '/users', auth: :guest, provides: [ :json ] do
   @user = build_user_from_pibi
@@ -116,13 +154,10 @@ post '/users', auth: :guest, provides: [ :json ] do
   end
 end
 
-# route_namespace '/users/:user_id' do
-  # before do
-  #   restrict_to(:user, with: { id: params[:user_id].to_i })
-  # end
-
 get '/users/:user_id', auth: :user, requires: [ :user ], :provides => [ :json ] do
-  rabl :"users/show"
+  respond_with @user do |f|
+    f.json { rabl :"users/show" }
+  end
 end
 
 patch '/users/:user_id',
@@ -130,104 +165,23 @@ patch '/users/:user_id',
   provides: [ :json ],
   requires: [ :user ] do
 
-  api_optional!({
-    name: nil,
-    gravatar_email: nil,
-    email: nil,
-    preferences: nil,
+  user_users_update(current_user)
 
-    current_password: lambda { |pw|
-      pw ||= ''
+  blank_halt! 204 if params[:no_object]
 
-      if !pw.empty? && User.encrypt(pw) != current_user.password
-        return "The current password you entered is wrong."
-      end
-
-      true
-    },
-
-    password: nil,
-    password_confirmation: nil,
-    preferences: nil
-  })
-
-  no_object  = params[:no_object]; params.delete(:no_object)
-
-  api_consume! :preferences do |prefs|
-    @user.update_preferences(prefs)
-  end
-
-  api_consume! :current_password
-
-  unless @user.update(api_params)
-    halt 400, @user.errors
-  end
-
-  blank_halt! if no_object
-
-  respond_to do |f|
-    f.json { rabl :"users/show", object: @user }
+  respond_with @user do |f|
+    f.json { rabl :"users/show" }
   end
 end
 
-  # Accepts:
-  # => name: String
-  # => email: String
-  # => gravatar_email: String
-  # => password: { :current, :new, :confirmation }
-  # => currency: String
-  # put '/users/:user_id', auth: :user, requires: [ :user ], :provides => [ :json ] do
-  #   updatable_params = accept_params([ :name, :email, :gravatar_email ], @user)
-
-  #   if params.has_key?('password') && params[:password][:current]
-  #     if User.encrypt(params[:password][:current]) != @user.password
-  #       @user.errors.add(:password, "Invalid current password")
-  #       halt 400, @user.report_errors
-  #     elsif params[:password][:new].length < 7
-  #       @user.errors.add(:password, 'Password is too short! It must be at least 7 characters long.')
-  #       halt 400, @user.report_errors
-  #     else
-
-  #       if params[:password][:new] != params[:password][:current]
-  #         updatable_params[:password]               = User.encrypt(params[:password][:new])
-  #         updatable_params[:password_confirmation]  = User.encrypt(params[:password][:confirmation])
-  #       end
-  #     end
-  #   end
-
-  #   unless @user.update(updatable_params)
-  #     halt 400, @user.report_errors
-  #   end
-
-  #   # the account default currency
-  #   if params.has_key?('currency')
-  #     if current_account.currency != params[:currency]
-  #       unless current_account.update({ currency: params[:currency] })
-  #         halt 400, @account.all_errors
-  #       end
-  #     end
-  #   end
-
-  #   # remove the "temp-password" status and notifications (if any)
-  #   # if the user has updated their password
-  #   if updatable_params.has_key?(:password)
-  #     @user.pending_notices({ type: 'password' }).each { |n| n.accept! }
-  #   end
-
-  #   status 200
-  #   rabl :"users/show"
-  # end
-
-  delete '/users/:user_id/links/:provider', auth: :user, requires: [ :user ], provides: [ :json ] do |_,provider|
-    unless linked_user = @user.linked_to?(provider)
-      halt 400, "That account is not linked to a #{provider_name(provider)} one."
-    end
-
-    unless linked_user.detach_from_master
-      halt 500, linked_user.errors
-    end
-
-    204
+delete '/users/:user_id/links/:provider', auth: :user, requires: [ :user ], provides: [ :json ] do |_,provider|
+  unless linked_user = @user.linked_to?(provider)
+    halt 400, "That account is not linked to a #{provider_name(provider)} one."
   end
 
-# end
+  unless linked_user.detach_from_master
+    halt 500, linked_user.errors
+  end
+
+  blank_halt! 205
+end
