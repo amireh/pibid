@@ -7,7 +7,7 @@ get '/sessions/:sink', auth: [ :user ], provides: [ :json ] do
 end
 
 get '/sessions/pulse', auth: [ :user ] do
-  blank_halt!
+  blank_halt! 204
 end
 
 post '/sessions', auth: [ :guest ], provides: [ :json ] do
@@ -39,13 +39,13 @@ end
 delete '/sessions', auth: :user, provides: [ :json ] do
   session[:id] = nil
 
-  blank_halt!
+  blank_halt! 205
 end
 
 delete '/sessions/:sink', auth: :user, provides: [ :json ] do
   session[:id] = nil
 
-  blank_halt!
+  blank_halt! 205
 end
 
 # Support both GET and POST for callbacks

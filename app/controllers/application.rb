@@ -31,5 +31,5 @@ get '/currencies', auth: [ :user ], provides: [ :json ] do
 end
 
 def blank_halt!(rc = 200)
-  halt 200, '{}'
+  halt rc
 end

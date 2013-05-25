@@ -1,3 +1,22 @@
+helpers do
+  def user_accounts_update(account, p = params)
+    api_optional!({
+      currency: lambda { |iso|
+        unless Currency[(iso || '').to_s]
+          return "Unrecognized currency ISO code."
+        end
+      }
+    }, p)
+
+
+    unless account.update(api_params)
+      halt 400, account.errors
+    end
+
+    account
+  end
+end
+
 get '/users/:user_id/accounts/:account_id',
   auth: :user,
   provides: [ :json ],
@@ -15,21 +34,9 @@ patch '/users/:user_id/accounts/:account_id',
   provides: [ :json ],
   requires: [ :user, :account ] do
 
-  api_optional!({
-    currency: lambda { |iso|
-      unless Currency[(iso || '').to_s]
-        return "Unrecognized currency ISO code."
-      end
-    }
-  })
+  @account = user_accounts_update(@account, params)
 
-  no_object  = params[:no_object]; params.delete(:no_object)
-
-  unless @account.update(api_params)
-    halt 400, @account.errors
-  end
-
-  blank_halt! if no_object
+  blank_halt! if params[:no_object]
 
   respond_with @account do |f|
     f.json {

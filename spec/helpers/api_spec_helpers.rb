@@ -77,7 +77,7 @@ module RSpec
     end # Fail
 
     class Success
-      def initialize(http_rc = 200)
+      def initialize(http_rc)
         @http_rc = http_rc
       end
 
@@ -88,7 +88,7 @@ module RSpec
 
         @api_rc = api_rc
 
-        return false if api_rc.http_rc != @http_rc
+        return false unless @http_rc.include?(api_rc.http_rc)
         return false if api_rc.status  != :success
 
         true
@@ -127,8 +127,9 @@ module RSpec
       Fail.new(http_rc, keywords)
     end
 
-    def succeed(http_rc = 200)
-      Success.new(http_rc)
+    def succeed(http_rc = 200..205)
+      http_rc = http_rc.respond_to?(:to_a) ? http_rc.to_a : [ http_rc ]
+      Success.new(http_rc.flatten)
     end
   end
 end

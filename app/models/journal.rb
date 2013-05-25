@@ -67,6 +67,7 @@ class Journal
     }.merge(options)
 
     @scopes['user'] = self.user
+    @collections['users'] = User
 
     validate_structure!
 
@@ -115,11 +116,15 @@ class Journal
 
   def factory_for(collection, operation)
     # @factories[factory_id(collection, operation)]
-    operator.method(factory_id(collection, operation)).unbind
+    begin
+      operator.method(factory_id(collection, operation))
+    rescue NameError => e
+      nil
+    end
   end
 
   def factory_id(collection, operation)
-    "#{collection}_#{operation}"
+    [ collection, operation ].join('_')
   end
 
   def reject!(property, cause)
@@ -384,11 +389,11 @@ class Journal
   end
 
   def current_scope_id
-    @ctx.scope.class.name.downcase
+    @ctx.scope.class.name.underscore.downcase
   end
 
   def current_collection_id
-    @ctx.collection.name.to_plural.downcase
+    @ctx.collection.name.underscore.to_plural.downcase
   end
 
   def current_collection_fqid()
@@ -456,7 +461,7 @@ class Journal
 
     rc, err = catch :halt do
       (@callbacks[:on_process] || []).map(&:call)
-      resource = factory.bind(operator).call(entry['data'] || {})
+      resource = factory.call(@ctx.scope, entry['data'] || {})
       nil
     end
 
@@ -478,6 +483,11 @@ class Journal
     unless can_update?(cid)
       reject! :update, "Unrecognized operation #{factory_id(cid, :update)}"
     end
+
+    if @ctx.collection == User then
+      entry['id'] = self.user.id
+    end
+
   end
 
   def process_update(entry)
@@ -487,7 +497,7 @@ class Journal
     resource_id = shadow_for(entry['id'])
 
     unless resource = @ctx.collection.get(resource_id)
-      unless graceful
+      unless graceful?
         halt 400, "No such resource##{entry['id']} in collection #{current_collection_id}"
       end
 
@@ -496,7 +506,7 @@ class Journal
 
     rc, err = catch :halt do
       (@callbacks[:on_process] || []).map(&:call)
-      resource = factory.bind(operator).call(resource, entry['data'] || {})
+      resource = factory.call(resource, entry['data'] || {})
       nil
     end
 

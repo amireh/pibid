@@ -21,7 +21,7 @@ helpers do
     end
   end
 
-  def account_transactions_create(p = params)
+  def account_transactions_create(account, p = params)
     api_required!({
       amount:     nil,
       type: lambda { |t|
@@ -60,7 +60,7 @@ helpers do
     categories = []
     api_consume! :categories do |v| categories = v end
 
-    transaction = @account.send("#{type}s").new(api_params)
+    transaction = account.send("#{type}s").new(api_params)
 
     unless transaction.save
       halt 400, transaction.errors
@@ -68,7 +68,7 @@ helpers do
 
     if categories.any?
       categories.each do |cid|
-        unless c = @account.user.categories.get(cid)
+        unless c = account.user.categories.get(cid)
           next
         end
 
@@ -81,7 +81,7 @@ helpers do
     transaction
   end
 
-  def account_transactions_update(transaction = @transaction, p = params)
+  def account_transactions_update(transaction, p = params)
     api_optional!({
       amount:     nil,
       note:       nil,
@@ -127,7 +127,7 @@ helpers do
     transaction
   end
 
-  def account_transactions_delete(transaction = @transaction, p = params)
+  def account_transactions_delete(transaction, p = params)
     unless transaction.destroy
       halt 400, transaction.errors
     end
@@ -177,7 +177,7 @@ post '/accounts/:account_id/transactions',
   provides: [ :json ],
   requires: [ :account ] do
 
-  @transaction = account_transactions_create(params)
+  @transaction = account_transactions_create(@account, params)
 
   respond_with @transaction do |f|
     f.json { rabl :"transactions/show" }
@@ -214,5 +214,5 @@ delete '/accounts/:account_id/transactions/:transaction_id',
 
   account_transactions_delete(@transaction)
 
-  blank_halt!
+  blank_halt! 205
 end

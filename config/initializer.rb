@@ -27,7 +27,7 @@ configure do |app|
 
   User.default_categories = settings.user['default_categories']
 
-  puts "User categories: #{User.default_categories}"
+  # puts "User categories: #{User.default_categories}"
 
   set :views, File.join($ROOT, 'app', 'views')
   set :protection, :except => [:http_origin]

@@ -1,5 +1,5 @@
 helpers do
-  def user_categories_create(p = params)
+  def user_categories_create(user, p = params)
     api_required!({
       name: nil
     }, p)
@@ -8,7 +8,7 @@ helpers do
       icon: nil
     }, p)
 
-    category = @user.categories.create(api_params)
+    category = user.categories.create(api_params)
 
     unless category.saved?
       halt 400, category.errors
@@ -17,7 +17,7 @@ helpers do
     category
   end
 
-  def user_categories_update(category = @category, p = params)
+  def user_categories_update(category, p = params)
     api_optional!({
       name: nil,
       icon: nil
@@ -30,7 +30,7 @@ helpers do
     category
   end
 
-  def user_categories_delete(category = @category, p = params)
+  def user_categories_delete(category, p = params)
     unless category.destroy
       halt 400, category.errors
     end
@@ -44,7 +44,7 @@ post '/users/:user_id/categories',
   provides: [ :json ],
   requires: [ :user ] do
 
-  @category = user_categories_create(params)
+  @category = user_categories_create(@user, params)
 
   respond_with @category do |f|
     f.json { rabl :"categories/show" }
@@ -80,5 +80,5 @@ delete '/users/:user_id/categories/:category_id',
 
   user_categories_delete(@category, params)
 
-  blank_halt!
+  blank_halt! 205
 end
