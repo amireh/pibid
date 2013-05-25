@@ -42,6 +42,28 @@ feature "Journaling" do
     t.id.should == rc.body["journal"]["shadowmap"]["account"]["transactions"]["c1234"]
   end
 
+  it "creating a user-scoped collection resource" do
+    data = {
+      entries: {
+        user: {
+          categories: {
+            create: [{
+              id: 'c1234',
+              data: {
+                name: "My Category"
+              }
+            }]
+          }
+        }
+      }
+    }
+
+    nr_categories = @user.categories.length
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    @user.refresh.categories.length.should == nr_categories+1
+  end
+
   it "creating multiple resources" do
     data = {
       scopemap: {

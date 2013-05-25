@@ -39,8 +39,8 @@ class Journal
     @ctx = Context.new
 
     # resolved scopes and collections
-    @scopes      = {}
-    @collections = {}
+    @scopes         = {}
+    @collections    = {}
 
     # resolved shadow keys
     @shadowmap  = {}
@@ -57,19 +57,25 @@ class Journal
     me
   end
 
-  def commit(options = {})
+  def commit(in_operator, options = {})
+    unless self.operator = in_operator
+      throw "bad journal context, no operator has been assigned!"
+    end
+
     @options = {
       graceful: true
     }.merge(options)
 
+    @scopes['user'] = self.user
+
     validate_structure!
 
+    # resolve scopes and collections, and validate operation entries
     @entries.each_pair do |scope, collections|
-      # resolve the scope and collection
       resolved_scope = resolve_scope!(scope, @user)
 
       collections.each_pair do |collection, operations|
-        resolved_collection = resolve_collection!(collection, resolved_scope)
+        resolve_collection!(collection, resolved_scope)
 
         validate!(:create, operations)
         validate!(:update, operations)
@@ -97,18 +103,19 @@ class Journal
     @callbacks[stage] << method
   end
 
-  def register_factory(entity, operation, method)
-    unless Operations.include?(operation)
-      throw "unsupported journal operation #{operation}, supported operation are #{Operations.join(', ')}"
-    end
+  # def register_factory(entity, operation, method)
+  #   unless Operations.include?(operation)
+  #     throw "unsupported journal operation #{operation}, supported operation are #{Operations.join(', ')}"
+  #   end
 
-    @factories[factory_id(entity, operation)] = method.unbind
-  end
+  #   @factories[factory_id(entity, operation)] = method.unbind
+  # end
 
   private
 
   def factory_for(collection, operation)
-    @factories[factory_id(collection, operation)]
+    # @factories[factory_id(collection, operation)]
+    operator.method(factory_id(collection, operation)).unbind
   end
 
   def factory_id(collection, operation)
@@ -121,6 +128,10 @@ class Journal
   end
 
   def scope_identifier(scope)
+    if scope == 'user' then
+      return self.user.id
+    end
+
     @scopemap["#{scope.to_s}_id"]
   end
 
@@ -238,7 +249,7 @@ class Journal
         reject! :scopes, "Missing scope identifier: #{key}"
       end
 
-      scope_id = @scopemap["#{key}_id"].to_i
+      scope_id = scope_identifier(key).to_i
 
       # resolve the scope instance
       unless resolved_scope = parent_scope.send(key.to_plural).get(scope_id)
@@ -247,6 +258,9 @@ class Journal
 
       # define it so we don't have to resolve it in any subsequent entries
       @scopes[key] = resolved_scope
+
+      # inject the operator with the scope so the factories have access to it, if needed
+      operator.instance_variable_set("@#{key}", resolved_scope)
     end
 
     resolved_scope
@@ -259,6 +273,9 @@ class Journal
       end
 
       resolved_collection = @collections[key] = scope.send(key)
+
+      # inject the operator with the collection so the factories have access to it, if needed
+      operator.instance_variable_set("@#{key}", resolved_collection)
     end
 
     resolved_collection
