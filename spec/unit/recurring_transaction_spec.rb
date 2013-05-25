@@ -1,7 +1,7 @@
 describe "Recurring Transactions" do
 
   before do
-    mockup_user
+    valid! fixture(:user)
   end
 
   def mockup_rt(q = {})
@@ -25,6 +25,26 @@ describe "Recurring Transactions" do
     @account.balance.to_f.should == 0
 
     rt.commit.should be_true
+
+    @account = @account.refresh
+    @account.balance.to_f.should == 5.0
+  end
+
+  it "should tag a generated transaction" do
+    @account.recurrings.all.count.should == 0
+
+    rt = mockup_rt({
+      amount: 5,
+      categories: @user.categories[0..1]
+    })
+
+    @account.recurrings.all.count.should == 1
+
+    @account.balance.to_f.should == 0
+
+    t = rt.commit
+    t.should be_true
+    t.categories.length.should == 2
 
     @account = @account.refresh
     @account.balance.to_f.should == 5.0
