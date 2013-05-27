@@ -43,38 +43,26 @@ helpers do
       currency:   nil,
       categories: nil,
       payment_method_id: nil
-      # payment_method_id: lambda { |pm_id|
-      #   unless @pm = @account.user.payment_methods.get(pm_id)
-      #     return "No such payment method."
-      #   end
-      # }
     }, p)
 
-    type = nil
-    api_consume! :type do |v| type = v end
+    type = api_consume! :type
 
     api_transform! :amount do |a| a.to_f.round(2).to_s end
     api_transform! :occured_on do |d| d.pibi_to_datetime end
-    # api_transform! :payment_method_id do |_| @pm end
 
-    categories = []
-    api_consume! :categories do |v| categories = v end
+    pm = api_consume! :payment_method_id do |pm_id|
+      account.user.payment_methods.get(pm_id) || account..payment_method
+    end
 
-    transaction = account.send("#{type}s").new(api_params)
+    categories  = api_consume!(:categories) || []
+    transaction = account.send("#{type}s").new(api_params({ payment_method: pm }))
 
     unless transaction.save
       halt 400, transaction.errors
     end
 
     if categories.any?
-      categories.each do |cid|
-        unless c = account.user.categories.get(cid)
-          next
-        end
-
-        transaction.categories << c
-      end
-
+      transaction.categories = categories.map { |cid| account.user.categories.get(cid) }.reject(&:nil?)
       transaction.save
     end
 
@@ -82,6 +70,8 @@ helpers do
   end
 
   def account_transactions_update(transaction, p = params)
+    account = transaction.account
+
     api_optional!({
       amount:     nil,
       note:       nil,
@@ -95,32 +85,22 @@ helpers do
       currency:   nil,
       categories: nil,
       payment_method_id: nil
-      # payment_method_id: lambda { |pm_id|
-      #   unless @pm = @account.user.payment_methods.get(pm_id)
-      #     return "No such payment method."
-      #   end
-      # }
     }, p)
 
     api_transform! :amount do |a| a.to_f.round(2).to_s end
     api_transform! :occured_on do |d| d.pibi_to_datetime end
     # api_transform! :payment_method_id do |_| @pm end
+    pm = api_consume! :payment_method_id do |pm_id|
+      @user.payment_methods.get(pm_id) || @user.payment_method
+    end
 
     api_consume! :categories do |categories|
-      transaction.categories = []
-
-      categories.each do |cid|
-        unless c = @account.user.categories.get(cid)
-          next
-        end
-
-        transaction.categories << c
-      end
-
+      categories ||= []
+      transaction.categories = categories.map { |cid| account.user.categories.get(cid) }.reject(&:nil?)
       transaction.save
     end
 
-    unless transaction.update(api_params)
+    unless transaction.update(api_params({ payment_method: pm }))
       halt 400, transaction.errors
     end
 

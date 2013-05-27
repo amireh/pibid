@@ -69,6 +69,7 @@ class Journal
     @scopes['user'] = self.user
     @collections['users'] = User
 
+    resolve_dependencies
     validate_structure!
 
     # resolve scopes and collections, and validate operation entries
@@ -105,6 +106,25 @@ class Journal
   end
 
   private
+
+  ScopePriorityList = [
+    :user,
+    :account
+  ]
+
+  CollectionPriorityList = [
+    :users,
+    :categories,
+    :payment_methods,
+    :transactions
+  ]
+
+  def resolve_dependencies()
+    @entries = Hash[@entries.sort_by { |k,v| ScopePriorityList.index(k.to_sym) }]
+    @entries.each_pair { |scope, collections|
+      @entries[scope] = Hash[collections.sort_by { |k,v| CollectionPriorityList.index(k.to_sym) }]
+    }
+  end
 
   def factory_for(collection, operation)
     # @factories[factory_id(collection, operation)]

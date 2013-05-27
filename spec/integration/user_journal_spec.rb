@@ -584,6 +584,79 @@ feature "Journaling" do
       rc.body["journal"]["processed"]["user"]["users"]["update"].length.should == 1
       @user.refresh.p('foo').should == 'bar'
     end
-
   end
+
+  it "dependent operations" do
+    data = {
+      scopemap: {
+        account_id: @account.id
+      },
+
+      entries: {
+        account: {
+          transactions: {
+            create: [{
+              id: 'c10444',
+              data: {
+                amount: 12.24,
+                type: 'withdrawal',
+                payment_method_id: 'c10445',
+                categories: [ 'c10443' ]
+              }
+            }]
+          }
+        },
+        user: {
+          categories: {
+            create: [{
+              id:   'c10443',
+              data: {
+                name: "Hot hot hot"
+              }
+            }]
+          },
+
+          payment_methods: {
+            create: [{
+              id: 'c10445',
+              data: {
+                name: 'Cold'
+              }
+            }]
+          },
+
+          users: {
+            update: [{
+              id: @user.id,
+              data: {
+                preferences: {
+                  foo: 'bar'
+                }
+              }
+            }]
+          }
+        }
+      }
+    }
+
+    rc = api_call post "/users/#{@user.id}/journal", data
+    rc.should succeed
+    rc.body["journal"]["processed"]["user"]["users"]["update"].length.should == 1
+    rc.body["journal"]["processed"]["user"]["categories"]["create"].length.should == 1
+    rc.body["journal"]["processed"]["user"]["payment_methods"]["create"].length.should == 1
+    rc.body["journal"]["processed"]["account"]["transactions"]["create"].length.should == 1
+
+    tx_id = rc.body["journal"]["shadowmap"]["account"]["transactions"]["c10444"]
+    ca_id = rc.body["journal"]["shadowmap"]["user"]["categories"]["c10443"]
+    pm_id = rc.body["journal"]["shadowmap"]["user"]["payment_methods"]["c10445"]
+
+    tx = valid! Transaction.get(tx_id)
+    ca = valid! Category.get(ca_id)
+    pm = valid! PaymentMethod.get(pm_id)
+
+    tx.categories.length.should == 1
+    tx.categories.first.should  == ca
+    tx.payment_method.should == pm
+  end
+
 end
