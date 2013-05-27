@@ -26,5 +26,5 @@ class Category
   end
 
   is :transactable
-
+  is :journallable
 end

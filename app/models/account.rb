@@ -28,6 +28,7 @@ class Account
     message: "You already have such an account."
 
   is :transactable
+  is :journallable
 
   def valid_currency?
     unless Currency.valid?(self.currency)

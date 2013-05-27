@@ -1,3 +1,5 @@
+require 'lib/datamapper/is/journallable'
+
 class Transaction
   include DataMapper::Resource
 
@@ -27,6 +29,8 @@ class Transaction
   belongs_to :payment_method, required: false, default: lambda { |tx,*_| tx.account.user.payment_method }
 
   has n, :categories, :through => Resource, :constraint => :skip
+
+  is :journallable
 
   before :destroy do
     CategoryTransaction.all({ transaction_id: self.id }).destroy

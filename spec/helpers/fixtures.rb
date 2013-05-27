@@ -135,7 +135,9 @@ module Fixtures
 
       if categories.any?
         categories.each do |cid|
-          tx.categories << account.user.categories.get(cid)
+          if c = account.user.categories.get(cid)
+            tx.categories << c
+          end
         end
 
         tx.save

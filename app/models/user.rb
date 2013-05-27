@@ -60,6 +60,7 @@ class User
 
   # is :locatable
   is :preferencable, {}, Pibi::Preferences.defaults['user']
+  is :journallable
 
   # --------- -------
   # DISABLED: LOCKING
