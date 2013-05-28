@@ -1,21 +1,60 @@
 describe "Recurring Transactions" do
 
-  before do
+  before(:all) do
     valid! fixture(:user)
   end
 
+  before(:each) do
+    @a = @account = @account.refresh
+    @a.recurrings.destroy
+    @a.transactions.destroy
+  end
+
   def mockup_rt(q = {})
-    @account.recurrings.create({
-      amount: 1,
-      note: 'tester'
-    }.merge(q))
+    valid! fixture(:recurring, q)
   end
 
   it "should create a recurring transaction" do
-    @account.recurrings.all.count.should == 0
-    mockup_rt({ amount: 5 })
-    @account.recurrings.all.count.should == 1
+    valid! fixture(:recurring)
   end
+
+  context "validation" do
+    it "should validate recurrence in yearly frequency" do
+      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: nil })
+      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: 1, recurs_on_day: nil })
+      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: -1, recurs_on_day: 1 })
+      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: 1, recurs_on_day: 300 })
+      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: 1, recurs_on_day: 35 })
+
+      valid!    fixture(:recurring, { frequency: :yearly, recurs_on_month: 1, recurs_on_day: 1 })
+      valid!    fixture(:recurring, { frequency: :yearly, recurs_on_month: 8, recurs_on_day: 19 })
+    end
+
+    it "should validate recurrence in monthly frequency" do
+      invalid!  fixture(:recurring, { frequency: :monthly, recurs_on_day: nil })
+      invalid!  fixture(:recurring, { frequency: :monthly, recurs_on_day: 300 })
+      invalid!  fixture(:recurring, { frequency: :monthly, recurs_on_day: 'me' })
+      invalid!  fixture(:recurring, { frequency: :monthly, recurs_on_day: -5 })
+
+      valid!    fixture(:recurring, { frequency: :monthly, recurs_on_day: 15 })
+      valid!    fixture(:recurring, { frequency: :monthly, recurs_on_day: 1 })
+      valid!    fixture(:recurring, { frequency: :monthly, recurs_on_day: 28 })
+    end
+
+    it "should validate flow type" do
+      invalid!  fixture(:recurring, { frequency: :daily, flow_type: :bar })
+      invalid!  fixture(:recurring, { frequency: :daily, flow_type: 5 })
+
+      valid!    fixture(:recurring, { frequency: :daily, flow_type: :negative })
+      valid!    fixture(:recurring, { frequency: :daily, flow_type: :positive })
+    end
+
+    it "should require a note" do
+      invalid! fixture(:recurring, { note: nil })
+      invalid! fixture(:recurring, { note: '' })
+    end
+  end
+
 
   it "should commit a recurring transaction" do
     @account.recurrings.all.count.should == 0
@@ -35,12 +74,11 @@ describe "Recurring Transactions" do
 
     rt = mockup_rt({
       amount: 5,
-      categories: @user.categories[0..1]
+      frequency: :daily,
+      categories: @user.categories[0..1].map(&:id)
     })
 
     @account.recurrings.all.count.should == 1
-
-    @account.balance.to_f.should == 0
 
     t = rt.commit
     t.should be_true

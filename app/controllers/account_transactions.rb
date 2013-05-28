@@ -23,13 +23,29 @@ helpers do
 
   def account_transactions_create(account, p = params)
     api_required!({
-      amount:     nil,
-      type: lambda { |t|
+      amount: nil,
+      type:   lambda { |t|
         unless [ 'withdrawal', 'deposit' ].include?(t)
           return "Invalid type '#{t}', accepted types are: deposit and withdrawal"
         end
       }
     }, p)
+
+    collection = account.send(api_consume!(:type).to_s.to_plural)
+
+    account_transactions_build(collection.new, account, p)
+  end
+
+  def account_transactions_update(transaction, p = params)
+    api_optional!({
+      amount: nil
+    }, p)
+
+    account_transactions_build(transaction, transaction.collection.account, p)
+  end
+
+  def account_transactions_build(transaction, account, p = params)
+    user    = account.user
 
     api_optional!({
       note:       nil,
@@ -45,62 +61,21 @@ helpers do
       payment_method_id: nil
     }, p)
 
-    type = api_consume! :type
-
     api_transform! :amount do |a| a.to_f.round(2).to_s end
     api_transform! :occured_on do |d| d.pibi_to_datetime end
 
     pm = api_consume! :payment_method_id do |pm_id|
-      account.user.payment_methods.get(pm_id) || account..payment_method
+      user.payment_methods.get(pm_id) || user.payment_method
     end
 
-    categories  = api_consume!(:categories) || []
-    transaction = account.send("#{type}s").new(api_params({ payment_method: pm }))
+    categories = (api_consume!(:categories)||[]).map { |cid| user.categories.get(cid) }.reject(&:nil?)
+
+    transaction.attributes = api_params({
+      payment_method: pm,
+      categories:     categories
+    })
 
     unless transaction.save
-      halt 400, transaction.errors
-    end
-
-    if categories.any?
-      transaction.categories = categories.map { |cid| account.user.categories.get(cid) }.reject(&:nil?)
-      transaction.save
-    end
-
-    transaction
-  end
-
-  def account_transactions_update(transaction, p = params)
-    account = transaction.account
-
-    api_optional!({
-      amount:     nil,
-      note:       nil,
-      occured_on: lambda { |d|
-        begin
-          d.pibi_to_datetime(false)
-        rescue
-          return 'Invalid date, expected format: MM/DD/YYYY'
-        end
-      },
-      currency:   nil,
-      categories: nil,
-      payment_method_id: nil
-    }, p)
-
-    api_transform! :amount do |a| a.to_f.round(2).to_s end
-    api_transform! :occured_on do |d| d.pibi_to_datetime end
-    # api_transform! :payment_method_id do |_| @pm end
-    pm = api_consume! :payment_method_id do |pm_id|
-      @user.payment_methods.get(pm_id) || @user.payment_method
-    end
-
-    api_consume! :categories do |categories|
-      categories ||= []
-      transaction.categories = categories.map { |cid| account.user.categories.get(cid) }.reject(&:nil?)
-      transaction.save
-    end
-
-    unless transaction.update(api_params({ payment_method: pm }))
       halt 400, transaction.errors
     end
 

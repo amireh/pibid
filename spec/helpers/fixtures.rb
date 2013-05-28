@@ -57,6 +57,9 @@ module Fixtures
     def salt
       Fixtures.salt
     end
+    def tiny_salt
+      Fixtures.tiny_salt
+    end
 
     def accept(params, p = @params)
       params.each_pair { |k,v|
@@ -147,6 +150,30 @@ module Fixtures
     end
   end # DepositFixture
 
+  class RecurringFixture < Fixture
+    def build(account, params = {})
+      raise ":recurring fixture requires a valid @account" unless account
+
+      @params = accept(params, {
+        note:       "Recurrie##{tiny_salt}",
+        amount:     rand(50) + 1,
+        frequency: :daily,
+        flow_type: :positive,
+        recurs_on_month: Time.now.month,
+        recurs_on_day: Time.now.day,
+        currency:   account.currency,
+        categories: [],
+        payment_method: nil
+      })
+
+      @params[:categories] = @params[:categories].map { |cid|
+        account.user.categories.get(cid)
+      }.reject(&:nil?)
+
+      account.recurrings.create(@params)
+    end
+  end # DepositFixture
+
   class CategoryFixture < Fixture
 
     def build(user, params = {})
@@ -198,6 +225,8 @@ def fixture(resource, o = {})
     Fixtures[:account].build(user, o)
   when :deposit
     @tx = Fixtures[:deposit].build(@account, o)
+  when :recurring
+    @rtx = Fixtures[:recurring].build(@account, o)
   when :category
     @c = Fixtures[:category].build(@user, o)
   end

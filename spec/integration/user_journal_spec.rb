@@ -484,7 +484,7 @@ feature "Journaling" do
                     flow_type: "positive",
                     amount: 5,
                     frequency: "monthly",
-                    monthly_recurs_on_day: 5
+                    recurs_on_day: 5
                   }
                 }]
               }
@@ -498,13 +498,7 @@ feature "Journaling" do
       end
 
       it "updating a category" do
-        rtx = @account.recurrings.create({
-          note: "Xyz",
-          flow_type: "positive",
-          amount: 5,
-          frequency: "yearly",
-          recurs_on: DateTime.new(Time.now.year, 1, 1)
-        })
+        rtx = valid! fixture(:recurring)
 
         data = {
           scopemap: {
@@ -531,13 +525,7 @@ feature "Journaling" do
       end
 
       it "deleting an rtx" do
-        rtx = @account.recurrings.create({
-          note: "Xyz",
-          flow_type: "positive",
-          amount: 5,
-          frequency: "yearly",
-          recurs_on: DateTime.new(Time.now.year, 1, 1)
-        })
+        rtx = valid! fixture(:recurring)
 
         data = {
           scopemap: {

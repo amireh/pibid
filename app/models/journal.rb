@@ -116,7 +116,8 @@ class Journal
     :users,
     :categories,
     :payment_methods,
-    :transactions
+    :transactions,
+    :recurrings
   ]
 
   def resolve_dependencies()
