@@ -98,6 +98,18 @@ post '/accounts/:account_id/recurrings',
   end
 end
 
+get '/accounts/:account_id/recurrings/:recurring_id',
+  auth: :user,
+  provides: [ :json ],
+  requires: [ :account, :recurring ] do
+
+  @transaction = @recurring
+
+  respond_with @transaction do |f|
+    f.json { rabl :"recurrings/show" }
+  end
+end
+
 patch '/accounts/:account_id/recurrings/:recurring_id',
   auth: :user,
   provides: [ :json ],
