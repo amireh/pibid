@@ -1,3 +1,4 @@
 object @category
 
-attributes :name, :id, :icon
+node(:id) { |r| r.id }
+attributes :name, :icon

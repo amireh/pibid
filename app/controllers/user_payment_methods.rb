@@ -89,6 +89,18 @@ helpers do
 
 end
 
+get '/users/:user_id/payment_methods',
+  auth: [ :user ],
+  provides: [ :json ],
+  requires: [ :user ] do
+
+  @payment_methods = @user.payment_methods
+
+  respond_with @payment_methods do |f|
+    f.json { rabl :"payment_methods/index", collection: @payment_methods }
+  end
+end
+
 post '/users/:user_id/payment_methods',
   auth: [ :user ],
   provides: [ :json ],
