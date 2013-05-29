@@ -1,4 +1,4 @@
-object @payment_method => :payment_method
+object @payment_method => ""
 
 attributes :name, :color, :default
 

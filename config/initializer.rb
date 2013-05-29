@@ -5,7 +5,8 @@ AppIssueURL   = "#{AppGithubURL}/issues"
 
 configure do |app|
   enable :cross_origin
-  use Rack::Session::Cookie, :secret => settings.credentials['cookie']['secret']
+  include Sinatra::SSE
+  # use Rack::Session::Cookie, :secret => settings.credentials['cookie']['secret']
 
   require 'app/models/transaction'
   require 'lib/pibi'
@@ -31,6 +32,7 @@ configure do |app|
 
   set :views, File.join($ROOT, 'app', 'views')
   set :protection, :except => [:http_origin]
+  set connections: {}
 
   # CORS
   set :allow_methods, [ :get, :post, :put, :patch, :delete, :options ]
@@ -42,6 +44,7 @@ configure do |app|
   require "config/initializers/datamapper"
   require "config/initializers/rabl"
   require "config/initializers/omniauth"
+  require "config/initializers/comlink"
   require "config/initializers/#{settings.environment}"
 end
 

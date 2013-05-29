@@ -4,6 +4,8 @@ class Journal
   attr_accessor :processed, :dropped, :entries, :shadowmap, :scopemap, :operator
 
   property :id, Serial
+  property :data, Text, default: '{}', length: 2**24-1 # 16 MBytes (MySQL MEDIUMTEXT)
+
   belongs_to :user
 
   Operations      = [ :create, :update, :delete ]

@@ -1,4 +1,4 @@
-object @category
+object @category => ""
 
 extends "categories/_show"
 

@@ -1,4 +1,4 @@
-object @currency
+object @currency => ""
 
 attributes :name, :symbol
 

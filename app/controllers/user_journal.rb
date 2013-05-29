@@ -1,3 +1,13 @@
+get '/users/:user_id/journals/:journal_id',
+  auth:     [ :user ],
+  provides: [ :json ],
+  requires: [ :user, :journal ] do
+
+  respond_with @journal do |f|
+    f.json { @journal.data }
+  end
+end
+
 post '/users/:user_id/journal',
   auth:     [ :user ],
   provides: [ :json ],
@@ -27,9 +37,40 @@ post '/users/:user_id/journal',
     halt 400, @journal.errors
   end
 
+  original_processed_map = @journal.processed.clone
+
+  @journal.shadowmap.each_pair { |scope, collections|
+    collections.each_pair { |collection, entries|
+      operations = @journal.processed[scope][collection]
+
+      entries.each_pair do |shadow_id, genuine_id|
+        operations.each_pair do |op, entries|
+
+          entries.select { |entry| entry[:id] == shadow_id }.each { |entry|
+            entry[:id] = genuine_id
+          }
+        end
+      end
+    }
+  }
+
+  @journal.data = rabl(:"users/broadcast_journal")
+
+  if @journal.save
+    settings.comlink.broadcast({
+      id: "journals.sync",
+      client_id: @user.id,
+      data: {
+        id: @journal.id
+      }
+    })
+  end
+
+  @journal.processed = original_processed_map
+
   respond_with @journal do |f|
-    f.json do
-      rabl :"users/journal"
-    end
+    f.json {
+      rabl(:"users/journal")
+    }
   end
 end

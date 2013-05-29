@@ -1,4 +1,4 @@
-object @account
+object @account => ""
 
 attributes :label, :currency
 

@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/amireh/timetastic
-  revision: 445e39868d295b639c4f770b37f0ed135f190cbc
+  revision: 2a5cd967f1a085d83d719a0db8d59e6f410ee4ca
   specs:
     timetastic (0.1.5)
 
@@ -38,6 +38,14 @@ GEM
       i18n (~> 0.6)
       multi_json (~> 1.0)
     addressable (2.2.8)
+    amq-client (0.9.12)
+      amq-protocol (>= 1.2.0)
+      eventmachine
+    amq-protocol (1.2.0)
+    amqp (0.9.10)
+      amq-client (~> 0.9.12)
+      amq-protocol (~> 1.2.0)
+      eventmachine
     backports (2.6.7)
     bcrypt-ruby (3.0.1)
     cancan (1.6.9)
@@ -76,6 +84,7 @@ GEM
     do_mysql (0.10.10)
       data_objects (= 0.10.10)
     eventmachine (1.0.0)
+    expectation (0.3.1)
     faraday (0.8.4)
       multipart-post (~> 1.1)
     fastercsv (1.5.5)
@@ -96,6 +105,7 @@ GEM
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
     mime-types (1.19)
+    moneta (0.7.16)
     money (5.1.1)
       i18n (~> 0.6.0)
     multi_json (1.5.0)
@@ -144,6 +154,9 @@ GEM
     sinatra-can (0.2)
       cancan (>= 1.6.0)
       sinatra (>= 1.0.0)
+    sinatra-sse (0.1)
+      expectation
+      sinatra
     stringex (1.5.1)
     systemu (2.5.2)
     thin (1.5.0)
@@ -164,6 +177,7 @@ PLATFORMS
 
 DEPENDENCIES
   addressable
+  amqp
   dm-constraints (>= 1.2.0)
   dm-core (>= 1.2.0)
   dm-migrations (>= 1.2.0)
@@ -171,8 +185,10 @@ DEPENDENCIES
   dm-serializer (>= 1.2.0)
   dm-types (>= 1.2.0)
   dm-validations (>= 1.2.0)
+  eventmachine
   google_currency (= 2.2.0)
   json
+  moneta
   money (= 5.1.1)
   multi_json
   mysql
@@ -189,7 +205,8 @@ DEPENDENCIES
   sinatra-can
   sinatra-contrib!
   sinatra-cross_origin!
+  sinatra-sse
   thin
-  timetastic (>= 0.1.5)!
+  timetastic!
   uuid
   yajl-ruby

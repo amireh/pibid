@@ -1,4 +1,4 @@
-object @user
+object @user => ""
 
 attributes :name, :email, :gravatar_email
 
@@ -18,6 +18,7 @@ node(:media) do |u|
     categories:       u.url(true) + '/categories',
     payment_methods:  u.url(true) + '/payment_methods',
     journal:          u.url(true) + '/journal',
+    journals:         u.url(true) + '/journals',
     stats:            u.url(true) + '/stats'
   }
 end
