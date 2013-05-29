@@ -56,8 +56,10 @@ module Pibi
         return __queue(data)
       end
 
-      lock do
-        @exchange.publish( data.to_json )
+      EM.next_tick do
+        lock do
+          @exchange.publish( data.to_json )
+        end
       end
 
       self
