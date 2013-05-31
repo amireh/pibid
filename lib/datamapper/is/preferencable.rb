@@ -15,8 +15,8 @@ module DataMapper
 
         property options[:on].to_sym, DataMapper::Property::Text, default: '{}'
 
-        @preferencable_options  = options
-        @default_preferences    = defaults
+        @preferencable_options  = options||{}
+        @default_preferences    = defaults||{}
       end
 
       module ClassMethods
