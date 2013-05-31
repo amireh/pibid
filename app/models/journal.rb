@@ -5,7 +5,7 @@ class Journal
 
   property :id, Serial
   property :data, Text, default: '{}', length: 2**24-1 # 16 MBytes (MySQL MEDIUMTEXT)
-
+  property :created_at, DateTime, default: lambda { |*r| DateTime.now }
   belongs_to :user
 
   Operations      = [ :create, :update, :delete ]
