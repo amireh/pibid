@@ -185,3 +185,17 @@ delete '/users/:user_id/links/:provider', auth: :user, requires: [ :user ], prov
 
   blank_halt! 205
 end
+
+delete '/users/:user_id',
+  auth: :user,
+  requires: [ :user ],
+  provides: [ :json ] do
+
+  unless @user.destroy
+    halt 400, @user.errors
+  end
+
+  session[:id] = nil
+
+  halt 200, '{}'
+end
