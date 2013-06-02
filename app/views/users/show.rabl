@@ -1,6 +1,6 @@
 object @user => ""
 
-attributes :name, :email, :gravatar_email
+attributes :name, :email, :gravatar_email, :email_verified
 
 node(:id) { |r| r.id }
 node(:links) do |u|
@@ -19,6 +19,10 @@ node(:media) do |u|
     payment_methods:  u.url(true) + '/payment_methods',
     journal:          u.url(true) + '/journal',
     journals:         u.url(true) + '/journals',
+    notices: {
+      email: u.url(true) + '/notices/email',
+      password: u.url(true) + '/notices/password'
+    },
     stats:            u.url(true) + '/stats'
   }
 end

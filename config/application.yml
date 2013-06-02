@@ -1,8 +1,5 @@
 development: &common
   allowed_origin: ''
-  courier:
-    enabled:  true
-    from:     'noreply@pibibot.com'
   user:
     default_categories: [
       'Bills',
@@ -36,8 +33,6 @@ production:
 
 test:
   <<: *common
-  courier:
-    enabled: false
   credentials:
     cookie:
       secret: 'adooken'

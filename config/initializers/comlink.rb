@@ -56,6 +56,8 @@ module Pibi
         return __queue(data)
       end
 
+      puts "broadcasting: #{data}"
+
       EM.next_tick do
         lock do
           @exchange.publish( data.to_json )

@@ -1,5 +1,5 @@
 AppName       = "Pibi"
-AppURL        = "http://api.pibibot.com"
+AppURL        = "http://api.pibiapp.com"
 AppGithubURL  = "https://github.com/amireh/pibid"
 AppIssueURL   = "#{AppGithubURL}/issues"
 
@@ -46,9 +46,4 @@ configure do |app|
   require "config/initializers/omniauth"
   require "config/initializers/comlink"
   require "config/initializers/#{settings.environment}"
-end
-
-# skip Pony in test mode
-configure :development, :production do |app|
-  require "config/initializers/pony"
 end

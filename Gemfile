@@ -22,7 +22,6 @@ gem 'addressable'
 gem 'uuid'
 gem 'timetastic', :git => 'https://github.com/amireh/timetastic'
 # gem 'timetastic', :path => "/home/kandie/Workspace/Projects/timetastic"
-gem "pony"
 gem 'omniauth'
 gem 'omniauth-facebook'
 gem 'omniauth-github'
