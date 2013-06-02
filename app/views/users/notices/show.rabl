@@ -1,3 +1,3 @@
 object @notice => ""
 
-attributes :id, :salt, :type, :created_at, :accepted_at
+attributes :id, :salt, :data, :type, :created_at, :accepted_at

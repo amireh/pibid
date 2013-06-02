@@ -89,3 +89,68 @@ put '/users/:user_id/notices/:type/:token',
     }
   end
 end
+
+post '/users/reset_password',
+  auth: [ :guest ],
+  provides: [ :json ] do
+
+  api_required!({
+    email: nil
+  })
+
+  unless @user = User.first({ email: api_param(:email) })
+    halt 400, "No account was found registered to the email address '#{api_param(:email)}'."
+  end
+
+  @user.notices.all({ type: 'password' }).destroy
+
+  unless @notice = @user.generate_temporary_password
+    halt 500, @user.errors
+  end
+
+  settings.comlink.broadcast({
+    id: "notices.password",
+    client_id: @user.id,
+    data: {
+      user: {
+        email: @user.email,
+        name:  @user.name
+      },
+      notice: JSON.parse(rabl(:"users/notices/show", object: @notice))
+    }
+  })
+
+  respond_to do |f|
+    f.json { '{}' }
+  end
+end
+
+put '/users/reset_password/:token',
+  auth: [ :guest ],
+  provides: [ :json ] do |token|
+
+  api_required!({
+    current:  nil,
+    password: nil,
+    password_confirmation: nil
+  })
+
+  unless @notice = Notice.first({ salt: token, data: api_param(:current) })
+    halt 400, "The temporary password you provided does not appear to be valid."
+  end
+
+  @user = @notice.user
+
+  api_consume!(:current)
+
+  unless @user.update(api_params)
+    halt 400, @user.errors
+  end
+
+  authorize(@user)
+
+  respond_to do |f|
+    f.json { '{}' }
+  end
+end
+

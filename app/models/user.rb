@@ -210,7 +210,7 @@ class User
 
     pw = tiny_salt
     # puts ">> User: generating a temporary password '#{pw}' <<"
-    update!({ password: User.encrypt(pw), auto_password: true })
+    # update!({ password: User.encrypt(pw), auto_password: true })
 
     # expire all current/old temp passwords that weren't used
     pending_notices.all({ type: 'password' }).each { |n| n.expire! }

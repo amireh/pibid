@@ -8,6 +8,8 @@
       blank_halt! 304
     end
 
+    puts api_params
+
     api_required!({
       email: lambda { |v|
         if !v || v.to_s.empty? || !is_email?(v)
@@ -16,11 +18,12 @@
       },
 
       password: lambda { |v|
-        if !v || v.to_s.length <= User::MinPasswordLength
+        if !v || v.to_s.length < User::MinPasswordLength
           return "The password you entered does not seem to be correct."
         end
       }
     })
+
 
     unless u = authenticate(api_param(:email), api_param(:password))
       u = User.new
