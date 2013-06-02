@@ -30,6 +30,34 @@ get '/currencies', auth: [ :user ], provides: [ :json ] do
   end
 end
 
+post '/submissions/bugs', auth: [ :user ], provides: [ :json ] do
+  bug_submission = BugSubmission.create({
+    details:  params.to_json,
+    user:     current_user
+  })
+
+  settings.comlink.broadcast({
+    id: "submissions.bug",
+    data: {
+      id: bug_submission.id,
+      user: {
+        email: current_user.email,
+        name:  current_user.name
+      },
+      filed_at: bug_submission.filed_at,
+      details:  params
+    }
+  })
+
+  unless bug_submission.saved?
+    halt 500, bug_submission.errors
+  end
+
+  respond_to do |f|
+    f.json { '{}' }
+  end
+end
+
 def blank_halt!(rc = 200)
   halt rc
 end
