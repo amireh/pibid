@@ -19,11 +19,10 @@ module Pibi
     end
 
     def run(options)
-      exchange_id = options[:exchange]
-      log "connecting to broker"
+      log "connecting to broker #{options}"
 
       EventMachine.next_tick do
-        AMQP.connect("amqp://localhost") do |connection|
+        AMQP.connect("amqp://#{options['user']}:#{options['password']}@#{options['host']}:#{options['port']}") do |connection|
           @connection = connection
           log "connection established, opening channel..."
 
@@ -31,14 +30,14 @@ module Pibi
             @channel = channel
             log "channel open, passively declaring exchange..."
 
-            options = {
+            exchange_options = {
               durable:      true,
               auto_delete:  false,
               passive:      true
             }
 
-            channel.fanout(exchange_id, options) do |exchange, declare_ok|
-              log "ready for broadcasting to '#{exchange_id}'"
+            channel.fanout(options['exchange'], exchange_options) do |exchange, declare_ok|
+              log "ready for broadcasting to '#{options['exchange']}'"
 
               @exchange = exchange
               @queued.each { |d| broadcast(d) }
@@ -97,6 +96,6 @@ configure do |app|
 
   set :comlink_thread, Thread.new {
     app.set :comlink, Pibi::Comlink.new
-    app.comlink.run({ exchange: app.amqp_exchange })
+    app.comlink.run(app.credentials['amqp'])
   }
 end
