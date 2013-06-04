@@ -1,9 +1,9 @@
-object @account
+object @account => ""
 
-attributes :id, :label, :currency
+attributes :label, :currency
 
+node(:id) { |r| r.id }
 node(:balance) { |a| a.balance.to_f.round(2) }
-
 node(:media) do |a|
   {
     url:    a.url,
@@ -11,8 +11,6 @@ node(:media) do |a|
       url:  a.url(true) + '/transactions',
       drilldown: a.url(true) + '/transactions/drilldown'
     },
-    recurrings: {
-      url: a.url(true) + '/recurrings'
-    }
+    recurrings: a.url(true) + '/recurrings'
   }
 end

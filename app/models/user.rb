@@ -60,6 +60,7 @@ class User
 
   # is :locatable
   is :preferencable, {}, Pibi::Preferences.defaults['user']
+  is :journallable
 
   # --------- -------
   # DISABLED: LOCKING
@@ -123,13 +124,6 @@ class User
     self.class.default_categories.each do |cname|
       self.categories.create({ name: cname, icon: cname.sanitize })
     end
-
-    # self.categories.create({ name: "Food",      icon: "food" })
-    # self.categories.create({ name: "Car Gas",   icon: "car-gas" })
-    # self.categories.create({ name: "Utility",   icon: "utility" })
-    # self.categories.create({ name: "Luxury",    icon: "luxury" })
-    # self.categories.create({ name: "Shopping",  icon: "shopping" })
-    # self.categories.create({ name: "Dinner",    icon: "dinner" })
   end
 
   class << self
@@ -216,7 +210,7 @@ class User
 
     pw = tiny_salt
     # puts ">> User: generating a temporary password '#{pw}' <<"
-    update!({ password: User.encrypt(pw), auto_password: true })
+    # update!({ password: User.encrypt(pw), auto_password: true })
 
     # expire all current/old temp passwords that weren't used
     pending_notices.all({ type: 'password' }).each { |n| n.expire! }
@@ -240,8 +234,8 @@ class User
     pending_notices.all({ :data.not => self.email, type: 'email' }).destroy
 
     unless n = pending_notices.first_or_create({ data: self.email, type: 'email' })
-      errors.add :notices, n.all_errors
-      throw :halt
+      errors.add :notices, n.errors
+      return false
     end
 
     n

@@ -4,10 +4,7 @@ def on_api_error(msg = response.body)
     halt response.status
   end
 
-  # content_type  :json
-  status        response.status
-  # response['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept'
-  # response['Access-Control-Allow-Headers'] = 'origin, x-requested-with, content-type, accept'
+  status response.status
 
   errmap = {}
 
@@ -33,10 +30,6 @@ def on_api_error(msg = response.body)
   }
 end
 
-# error do
-#   on_api_error.to_json
-# end
-
 error Sinatra::NotFound do
   return if @internal_error_handled
   @internal_error_handled = true
@@ -56,33 +49,28 @@ error 400..404 do
   on_api_error.to_json
 end
 
-# [ 401, 403, 404 ].each do |http_rc|
-#   error http_rc do
-#     return if @internal_error_handled
-#     @internal_error_handled = true
-
-#     respond_to do |f|
-#       f.json { on_api_error.to_json }
-#     end
-#   end
-# end
-
 error 500..503 do
   return if @internal_error_handled
   @internal_error_handled = true
 
-  # if !settings.intercept_internal_errors
-  #   raise request.env['sinatra.error']
-  # end
-
   begin
-    courier.report_error(request.env['sinatra.error'])
+    bug_submission = BugSubmission.create({
+      details: { sinatra_error: request.env['sinatra.error'] }.to_json
+    })
+
+    settings.comlink.broadcast({
+      id: "submissions.internal_error",
+      data: {
+        id: bug_submission.id,
+        filed_at: bug_submission.filed_at,
+        details:  { sinatra_error: request.env['sinatra.error'] }
+      }
+    })
   rescue Exception => e
     # raise e
   end
 
   if settings.test?
-
     on_api_error(request.env['sinatra.error'] || response.body).to_json
   else
     on_api_error("Internal error").to_json

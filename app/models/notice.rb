@@ -9,7 +9,6 @@ class Notice
   property    :accepted_at, DateTime
   property    :type,        String, length: 255
   property    :status,      Enum[ :pending, :expired, :accepted ], default: :pending
-  property    :displayed,   Boolean, default: false
   property    :dispatched,  Boolean, default: false
   belongs_to  :user, required: true
 

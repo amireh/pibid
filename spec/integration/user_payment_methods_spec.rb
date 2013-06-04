@@ -27,7 +27,7 @@ feature "Payment methods" do
     pm = @user.payment_method
     rc = api_call patch "/users/#{@user.id}/payment_methods/#{pm.id}", { name: 'Bazooka' }
     rc.should succeed
-    rc.body["payment_method"]["name"].should == 'Bazooka'
+    rc.body["name"].should == 'Bazooka'
   end
 
   scenario "Changing the default PM" do

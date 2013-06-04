@@ -1,7 +1,8 @@
-object @payment_method => :payment_method
+object @payment_method => ""
 
-attributes :id, :name, :color, :default
+attributes :name, :color, :default
 
+node(:id) { |r| r.id }
 # child(:user) {
 #   attributes :id
 # }

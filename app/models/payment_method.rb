@@ -22,6 +22,7 @@ class PaymentMethod
   has n, :recurrings,   :constraint => :set_nil
 
   is :transactable
+  is :journallable
 
   validates_uniqueness_of :name, :scope => :user_id,
     message: "You have already registered that payment method."

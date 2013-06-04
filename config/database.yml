@@ -1,14 +1,14 @@
 production:
   database: &common
     host: 'localhost'
-    un:   'root'
-    pw:   ''
-    db:   'pibid'
+    un:   'pibid'
+    pw:   'p1b1d'
+    db:   'pibiv2'
 
 test:
   database:
     <<: *common
-    db: 'pibid_test'
+    db: 'pibiv2_test'
 
 development:
   database:

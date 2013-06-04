@@ -69,16 +69,22 @@ module Sinatra
       #  3. the data needs to be (re)formatted
       #
       def api_consume!(keys)
+        out  = nil
+
         keys = [ keys ] unless keys.is_a?(Array)
         keys.each do |k|
           if val = @api[:required].delete(k.to_sym)
-            yield(val) if block_given?
+            out = val
+            out = yield(val) if block_given?
           end
 
           if val = @api[:optional].delete(k.to_sym)
-            yield(val) if block_given?
+            out = val
+            out = yield(val) if block_given?
           end
         end
+
+        out
       end
 
       def api_transform!(key, &handler)

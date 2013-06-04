@@ -20,9 +20,8 @@ gem "dm-mysql-adapter", ">=1.2.0"
 gem 'multi_json'
 gem 'addressable'
 gem 'uuid'
-gem 'timetastic', '>= 0.1.5', :git => 'https://github.com/amireh/timetastic'
-# gem 'timetastic', '>= 0.1.5', :path => "/home/kandie/Workspace/Projects/timetastic"
-gem "pony"
+gem 'timetastic', :git => 'https://github.com/amireh/timetastic'
+# gem 'timetastic', :path => "/home/kandie/Workspace/Projects/timetastic"
 gem 'omniauth'
 gem 'omniauth-facebook'
 gem 'omniauth-github'
@@ -35,6 +34,10 @@ gem 'sinatra-cross_origin', :github => 'britg/sinatra-cross_origin', :require =>
 gem 'sinatra-can', :require => "sinatra/can"
 gem 'money', '=5.1.1'
 gem 'google_currency', '=2.2.0'
+gem 'sinatra-sse', :require => "sinatra/sse"
+gem 'eventmachine'
+gem 'moneta', :require => 'rack/session/moneta'
+gem 'amqp'
 
 group :development do
   gem 'thin'

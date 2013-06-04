@@ -70,8 +70,8 @@ describe "Signing up for a new account" do
     rc = api_call get "/users/#{@user.id}"
     rc.should succeed
 
-    rc.body["user"]["id"].to_i.should == @user.id
-    rc.body["user"]["email"].should == @user.email
+    rc.body["id"].to_i.should == @user.id
+    rc.body["email"].should == @user.email
   end
 
   scenario "Reading someone else's data" do

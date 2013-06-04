@@ -1,52 +1,56 @@
-get '/sessions', auth: [ :user ], provides: [ :json ] do
-  rabl :"sessions/show"
-end
+[ '/sessions', '/sessions/:sink' ].each do |r|
+  get r, auth: [ :user ], provides: [ :json ] do
+    rabl :"sessions/show"
+  end
 
-get '/sessions/:sink', auth: [ :user ], provides: [ :json ] do
-  rabl :"sessions/show"
+  post r, provides: [ :json ] do
+    if logged_in?
+      blank_halt! 304
+    end
+
+    puts api_params
+
+    api_required!({
+      email: lambda { |v|
+        if !v || v.to_s.empty? || !is_email?(v)
+          return "Please enter a valid email address."
+        end
+      },
+
+      password: lambda { |v|
+        if !v || v.to_s.length < User::MinPasswordLength
+          return "The password you entered does not seem to be correct."
+        end
+      }
+    })
+
+
+    unless u = authenticate(api_param(:email), api_param(:password))
+      u = User.new
+      u.errors.add :email, 'The email or password you entered were incorrect.'
+      halt 400, u.errors
+    end
+
+    authorize(u)
+
+    rabl :"sessions/show"
+  end
+
+  delete r, provides: [ :json ] do
+    if !logged_in?
+      return blank_halt! 304
+    end
+
+    session[:id] = nil
+
+    blank_halt! 205
+  end
 end
 
 get '/sessions/pulse', auth: [ :user ] do
   blank_halt! 204
 end
 
-post '/sessions', auth: [ :guest ], provides: [ :json ] do
-  api_required!({
-    email: lambda { |v|
-      if !v || v.to_s.empty? || !is_email?(v)
-        return "Please enter a valid email address."
-      end
-    },
-
-    password: lambda { |v|
-      if !v || v.to_s.length <= User::MinPasswordLength
-        return "The password you entered does not seem to be correct."
-      end
-    }
-  })
-
-  unless u = authenticate(api_param(:email), api_param(:password))
-    u = User.new
-    u.errors.add :email, 'The email or password you entered were incorrect.'
-    halt 400, u.errors
-  end
-
-  authorize(u)
-
-  rabl :"sessions/show"
-end
-
-delete '/sessions', auth: :user, provides: [ :json ] do
-  session[:id] = nil
-
-  blank_halt! 205
-end
-
-delete '/sessions/:sink', auth: :user, provides: [ :json ] do
-  session[:id] = nil
-
-  blank_halt! 205
-end
 
 # Support both GET and POST for callbacks
 %w(get post).each do |method|

@@ -6,7 +6,6 @@ A money management and tracking service. The app is written in Ruby, and uses th
 
 * Sinatra
 * DataMapper (against a MySQL back-end)
-* Pony for sending emails
 * Gravatarify for gravatar integration
 * OmniAuth (FB, Twitter, and Github) for authentication
 

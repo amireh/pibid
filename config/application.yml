@@ -1,8 +1,5 @@
 development: &common
   allowed_origin: 'https://www.pibiapp.com'
-  courier:
-    enabled:  true
-    from:     'noreply@pibibot.com'
   user:
     default_categories: [
       'Bills',
@@ -32,12 +29,11 @@ development: &common
 
 production:
   <<: *common
+  cookie_domain: '.pibiapp.com'
   # allowed_origin: 'http://pibi.kodoware.com'
 
 test:
   <<: *common
-  courier:
-    enabled: false
   credentials:
     cookie:
       secret: 'adooken'

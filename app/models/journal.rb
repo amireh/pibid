@@ -4,6 +4,8 @@ class Journal
   attr_accessor :processed, :dropped, :entries, :shadowmap, :scopemap, :operator
 
   property :id, Serial
+  property :data, Text, default: '{}', length: 2**24-1 # 16 MBytes (MySQL MEDIUMTEXT)
+  property :created_at, DateTime, default: lambda { |*r| DateTime.now }
   belongs_to :user
 
   Operations      = [ :create, :update, :delete ]
@@ -69,6 +71,7 @@ class Journal
     @scopes['user'] = self.user
     @collections['users'] = User
 
+    resolve_dependencies
     validate_structure!
 
     # resolve scopes and collections, and validate operation entries
@@ -104,15 +107,27 @@ class Journal
     @callbacks[stage] << method
   end
 
-  # def register_factory(entity, operation, method)
-  #   unless Operations.include?(operation)
-  #     throw "unsupported journal operation #{operation}, supported operation are #{Operations.join(', ')}"
-  #   end
-
-  #   @factories[factory_id(entity, operation)] = method.unbind
-  # end
-
   private
+
+  ScopePriorityList = [
+    :user,
+    :account
+  ]
+
+  CollectionPriorityList = [
+    :users,
+    :categories,
+    :payment_methods,
+    :transactions,
+    :recurrings
+  ]
+
+  def resolve_dependencies()
+    @entries = Hash[@entries.sort_by { |k,v| ScopePriorityList.index(k.to_sym) }]
+    @entries.each_pair { |scope, collections|
+      @entries[scope] = Hash[collections.sort_by { |k,v| CollectionPriorityList.index(k.to_sym) }]
+    }
+  end
 
   def factory_for(collection, operation)
     # @factories[factory_id(collection, operation)]
@@ -411,20 +426,16 @@ class Journal
     !!factory_for(collection, :update)
   end
 
-  def map_shadow_resource(shadow_id, genuine_id)
+  def map_shadow_resource(shadow_id, resource)
     sid, cid = current_scope_id, current_collection_id
 
     @shadowmap[sid] ||= {}
     @shadowmap[sid][cid] ||= {}
-    @shadowmap[sid][cid][shadow_id.to_s] = genuine_id.to_i
+    @shadowmap[sid][cid][shadow_id.to_s] = resource.id.to_i
+
+    @ctx.collection.shadow(shadow_id, resource)
 
     true
-  end
-
-  def shadow_for(id)
-    sid, cid = current_scope_id, current_collection_id
-
-    (@shadowmap[sid] && @shadowmap[sid][cid] && @shadowmap[sid][cid][id]) || id.to_i
   end
 
   def preprocess_create(entry, entry_idx)
@@ -471,7 +482,7 @@ class Journal
 
     # map the shadow id to the real resource id
     # puts "mapping shadow #{entry['scope']}:#{entry['id']} to #{resource.id}"
-    map_shadow_resource(entry['id'], resource.id)
+    map_shadow_resource(entry['id'], resource)
 
     mark_processed :create, entry
   end
@@ -493,10 +504,7 @@ class Journal
   def process_update(entry)
     factory, resource = factory_for(current_collection_fqid, :update), nil
 
-    # check if it's a shadow resource
-    resource_id = shadow_for(entry['id'])
-
-    unless resource = @ctx.collection.get(resource_id)
+    unless resource = @ctx.collection.get(entry['id'])
       unless graceful?
         halt 400, "No such resource##{entry['id']} in collection #{current_collection_id}"
       end

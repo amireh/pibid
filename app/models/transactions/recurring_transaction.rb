@@ -4,6 +4,8 @@ class Transaction; end
 class Recurring < Transaction
   belongs_to :account, required: true
 
+  attr_accessor :recurs_on_month, :recurs_on_day
+
   property :flow_type,  Enum[ :positive, :negative ],      default: :positive
   property :frequency,  Enum[ :daily, :monthly, :yearly ], default: :monthly
   property :recurs_on,  DateTime, default: lambda { |*_| DateTime.now }
@@ -19,8 +21,66 @@ class Recurring < Transaction
 
       throw :halt
     end
+
+    unless [ :yearly, :monthly, :daily ].include?( (self.frequency||'').to_sym)
+      errors.add :frequency, "Frequency must be one of [ :yearly, :monthly, :daily ]"
+    end
+
+    unless [ :negative, :positive ].include?( (self.flow_type||'').to_sym)
+      return "Flow type must be either :negative or :positive"
+    end
+
+    self.recurs_on = build_recurrence_date(self.frequency, recurs_on_month, recurs_on_day)
   end
   # validates_presence_of :note, message: 'Must provide a name for this bill'
+
+  def build_recurrence_date(frequency, month, day)
+    recurs_on, this_year = nil, Time.now.year
+
+    month ||= 0
+    day   ||= 0
+
+    if self.recurs_on then
+      month ||= self.recurs_on.month
+      day   ||= self.recurs_on.day
+    end
+
+    month, day = month.to_i, day.to_i
+
+    if frequency == :yearly && (month < 1 || month > 12)
+      errors.add :recurs_on_month,  "Bad recurrence month [#{month}]; must be between 1 and 12"
+      throw :halt
+    end
+
+    if frequency != :daily && (day < 1 || day > 32)
+      errors.add :recurs_on_day,    "Bad recurrence day [#{day}]; must be between 1 and 32"
+      throw :halt
+    end
+
+    case frequency
+    when :monthly
+      # only the day is used in this case
+      begin
+        recurs_on = DateTime.new(this_year, 1, day.to_i)
+      rescue
+        errors.add :recurs_on, "Bad recurrence day: [#{day}]"
+        throw :halt
+      end
+
+    when :yearly
+      # the day and month are used in this case
+      begin
+        recurs_on = DateTime.new(this_year, month.to_i, day.to_i)
+      rescue
+        errors.add :recurs_on, "Bad recurrence day or month [#{day}, #{month}]"
+        throw :halt
+      end
+    else
+      recurs_on = DateTime.now
+    end
+
+    recurs_on
+  end
 
   def +(y)
     amount * (flow_type == :negative ? -1 : 1) + y

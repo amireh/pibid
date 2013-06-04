@@ -1,7 +1,8 @@
 object @transaction => ''
 
-attributes :id, :note, :payment_method_id#, :occured_on
+attributes :note
 
+node(:id) { |r| r.id }
 node(:type) { |tx| tx.type.to_s.downcase }
 node(:amount) { |tx| tx.amount.to_f.round(2) }
 node(:currency) { |tx| tx.currency }
@@ -9,6 +10,7 @@ node(:occured_on) { |tx| (tx.occured_on || DateTime.now).to_time.to_i + 3600 }
 node(:categories) { |tx|
   tx.categories.map { |c| c.id }
 }
+node(:payment_method_id) { |tx| tx.payment_method_id }
 
 # node(:categories) { |tx|
 #   tx.categories.map { |c| c.id }

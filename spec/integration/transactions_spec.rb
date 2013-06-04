@@ -1,9 +1,14 @@
 require 'rabl'
 
 describe "Transactions" do
-  before do
+  before(:all) do
     valid! fixture(:user)
+  end
+
+  before do
     sign_in
+    @account = @a = @account.refresh
+    @a.transactions.destroy
   end
 
   def render_resource(r, t = '/transactions/show')

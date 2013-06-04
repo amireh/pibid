@@ -39,6 +39,18 @@ helpers do
   end
 end
 
+get '/users/:user_id/categories',
+  auth: [ :user ],
+  provides: [ :json ],
+  requires: [ :user ] do
+
+  @categories = @user.categories
+
+  respond_with @categories do |f|
+    f.json { rabl :"categories/index", collection: @categories }
+  end
+end
+
 post '/users/:user_id/categories',
   auth: [ :user ],
   provides: [ :json ],

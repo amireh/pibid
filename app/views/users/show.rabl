@@ -1,46 +1,43 @@
-object @user
+object @user => ""
 
-attributes :id, :name, :email, :gravatar_email
+attributes :name, :email, :gravatar_email, :email_verified
 
+node(:id) { |r| r.id }
 node(:links) do |u|
   u.links.map { |u| u.provider }
 end
-node :account do |a|
-  partial "accounts/show", object: @user.account
+
+child :account do |a|
+  node(:id) { |a| a.id }
 end
 
 node(:media) do |u|
   {
-    url:    u.url,
-    accounts: {
-      url:  u.url(true) + '/accounts'
+    url:              u.url,
+    accounts:         u.url(true) + '/accounts',
+    categories:       u.url(true) + '/categories',
+    payment_methods:  u.url(true) + '/payment_methods',
+    journal:          u.url(true) + '/journal',
+    journals:         u.url(true) + '/journals',
+    notices: {
+      email: u.url(true) + '/notices/email',
+      password: u.url(true) + '/notices/password'
     },
-    categories: {
-      url: u.url(true) + '/categories'
-    },
-    payment_methods: {
-      url: u.url(true) + '/payment_methods'
-    },
-    journal: {
-      url: u.url(true) + '/journal'
-    },
-    stats: {
-      url: u.url(true) + '/stats'
-    }
+    stats:            u.url(true) + '/stats'
   }
 end
 
-node(:payment_methods) do |u|
-  u.payment_methods.map { |pm| partial "payment_methods/show", object: pm }
-end
+# node(:payment_methods) do |u|
+#   u.payment_methods.map { |pm| partial "payment_methods/show", object: pm }
+# end
 
 # node(:currencies) do |u|
 #   Currency.all.map { |c| partial "currencies/_show", object: c }
 # end
 
-node(:categories) do |u|
-  u.categories.map { |c| partial "categories/_show", object: c }
-end
+# node(:categories) do |u|
+#   u.categories.map { |c| partial "categories/_show", object: c }
+# end
 
 node(:preferences) do |s|
   s.preferences

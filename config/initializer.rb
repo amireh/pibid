@@ -1,11 +1,15 @@
 AppName       = "Pibi"
-AppURL        = "http://api.pibibot.com"
+AppURL        = "http://api.pibiapp.com"
 AppGithubURL  = "https://github.com/amireh/pibid"
 AppIssueURL   = "#{AppGithubURL}/issues"
 
 configure do |app|
   enable :cross_origin
-  use Rack::Session::Cookie, :secret => settings.credentials['cookie']['secret']
+  include Sinatra::SSE
+
+  # use Rack::Session::Cookie,
+  #   :domain => '.pibi.kodoware.com',
+  #   :secret => settings.credentials['cookie']['secret']
 
   require 'app/models/transaction'
   require 'lib/pibi'
@@ -31,6 +35,7 @@ configure do |app|
 
   set :views, File.join($ROOT, 'app', 'views')
   set :protection, :except => [:http_origin]
+  set connections: {}
 
   # CORS
   set :allow_methods, [ :get, :post, :put, :patch, :delete, :options ]
@@ -42,10 +47,6 @@ configure do |app|
   require "config/initializers/datamapper"
   require "config/initializers/rabl"
   require "config/initializers/omniauth"
+  require "config/initializers/comlink"
   require "config/initializers/#{settings.environment}"
-end
-
-# skip Pony in test mode
-configure :development, :production do |app|
-  require "config/initializers/pony"
 end

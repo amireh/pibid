@@ -4,7 +4,9 @@ configure do |app|
       OmniAuth::FailureEndpoint.new(env).redirect_to_failure
     }
 
-    provider :developer
+		OmniAuth.config.full_host = "https://api.pibiapp.com"
+
+    provider :developer unless app.settings.production?
 
     unless app.settings.test?
       provider :facebook,

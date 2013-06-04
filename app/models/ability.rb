@@ -7,7 +7,7 @@ ability do |user|
     u.id == user.id
   end
 
-  can :access, [ Category, PaymentMethod, Account, Notice ] do |r|
+  can :access, [ Category, PaymentMethod, Account, Notice, Journal ] do |r|
     r.user.id == user.id
   end
 

@@ -8,7 +8,8 @@ describe Journal do
         :resolve_collection!,
         :current_scope_id,
         :current_collection_id,
-        :current_collection_fqid
+        :current_collection_fqid,
+        :resolve_dependencies
 
     end
 
@@ -341,6 +342,36 @@ describe Journal do
 
       j.ctx.collection = j.ctx.scope.payment_methods
       j.current_collection_fqid.should == 'user_payment_methods'
+    end
+  end
+
+  context "Dependency resolution" do
+    it "#resolve_dependencies" do
+      j = @u.journals.new({
+        entries: {
+          account:  {},
+          user:     {}
+        }
+      })
+
+      j.resolve_dependencies
+      j.entries.to_a[0][0].should == "user"
+
+      j = @u.journals.new({
+        entries: {
+          account:  {
+            transactions: {}
+          },
+          user: {
+            payment_methods: {},
+            categories: {}
+          }
+        }
+      })
+
+      j.resolve_dependencies
+      j.entries["user"].to_a.flatten.index("categories").should == 0
+      j.entries["user"].to_a.flatten.index("payment_methods").should == 2
     end
 
   end
