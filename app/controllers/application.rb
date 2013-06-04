@@ -30,9 +30,11 @@ get '/currencies', auth: [ :user ], provides: [ :json ] do
   end
 end
 
-post '/submissions/bugs', auth: [ :user ], provides: [ :json ] do
+post '/submissions/bugs', provides: [ :json ] do
+  user = current_user || User.new({ email: "guest@pibiapp.com", name: "Guest" })
+
   bug_submission = BugSubmission.create({
-    details:  params.to_json,
+    details:  (params||{}).to_json,
     user:     current_user
   })
 
@@ -41,11 +43,11 @@ post '/submissions/bugs', auth: [ :user ], provides: [ :json ] do
     data: {
       id: bug_submission.id,
       user: {
-        email: current_user.email,
-        name:  current_user.name
+        email: user.email,
+        name:  user.name
       },
       filed_at: bug_submission.filed_at,
-      details:  params
+      details:  params||{}
     }
   })
 
