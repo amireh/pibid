@@ -18,7 +18,8 @@ module Pibi
       end
     end
 
-    def run
+    def run(options)
+      exchange_id = options[:exchange]
       log "connecting to broker"
 
       EventMachine.next_tick do
@@ -36,8 +37,8 @@ module Pibi
               passive:      true
             }
 
-            channel.fanout("pibi.journals", options) do |exchange, declare_ok|
-              log "ready for broadcasting"
+            channel.fanout(exchange_id, options) do |exchange, declare_ok|
+              log "ready for broadcasting to '#{exchange_id}'"
 
               @exchange = exchange
               @queued.each { |d| broadcast(d) }
@@ -96,6 +97,6 @@ configure do |app|
 
   set :comlink_thread, Thread.new {
     app.set :comlink, Pibi::Comlink.new
-    app.settings.comlink.run
+    app.comlink.run({ exchange: app.amqp_exchange })
   }
 end

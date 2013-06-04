@@ -1,6 +1,7 @@
 development: &common
   allowed_origin: ''
   cookie_domain: '.pibi.kodoware.com'
+  amqp_exchange: 'pibi.cloud'
   user:
     default_categories: [
       'Bills',
