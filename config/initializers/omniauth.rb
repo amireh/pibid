@@ -1,10 +1,13 @@
 configure do |app|
+
   use OmniAuth::Builder do |config|
     OmniAuth.config.on_failure = Proc.new { |env|
       OmniAuth::FailureEndpoint.new(env).redirect_to_failure
     }
 
     provider :developer unless app.production?
+
+    OmniAuth.config.full_host = app.oauth['host']
 
     unless app.settings.test?
       provider :facebook,
