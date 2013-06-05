@@ -1,0 +1,12 @@
+development:
+  amqp: &common
+    host: 'localhost'
+    port: '5672'
+    user: 'guest'
+    password: 'guest'
+    exchange: 'pibi.cloud'
+
+production:
+  amqp:
+    <<: *common
+

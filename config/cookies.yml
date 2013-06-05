@@ -1,0 +1,14 @@
+development:
+  cookies: &common
+    domain: '.pibi.localhost'
+    path:   '/'
+    key:    'pibi.session'
+    secret: 'teehee'
+    secure: false
+
+production:
+  cookies:
+    <<: *common
+    domain: '.pibi.kodoware.com'
+    secret: 'change me'
+    # secure: true

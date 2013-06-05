@@ -5,5 +5,7 @@ $LOAD_PATH << $ROOT
 
 require 'config/boot'
 
+Thread.abort_on_exception = true
+
 use Rack::ShowExceptions
 run Sinatra::Application

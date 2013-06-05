@@ -9,7 +9,7 @@ module Pibi
     end
 
     def log(msg)
-      puts ">> [producer]: #{msg}"
+      puts ">> [comlink]: #{msg}"
     end
 
     def lock(&callback)
@@ -19,7 +19,14 @@ module Pibi
     end
 
     def run(options)
-      log "connecting to broker #{options}"
+      log "connecting to broker"
+
+      log "AMQP connection settings:"
+      log "\tHost: #{options['host']}"
+      log "\tPort: #{options['port']}"
+      log "\tUser: #{options['user']}"
+      log "\tPassword: #{options['password'].length}"
+      log "\tExchange: #{options['exchange']}"
 
       EventMachine.next_tick do
         AMQP.connect("amqp://#{options['user']}:#{options['password']}@#{options['host']}:#{options['port']}") do |connection|
@@ -56,7 +63,7 @@ module Pibi
         return __queue(data)
       end
 
-      puts "broadcasting: #{data}"
+      # puts "broadcasting: #{data}"
 
       EM.next_tick do
         lock do
@@ -94,8 +101,16 @@ configure do |app|
     end
   end
 
-  set :comlink_thread, Thread.new {
-    app.set :comlink, Pibi::Comlink.new
-    app.comlink.run(app.credentials['amqp'])
-  }
+
+  # EM.next_tick do
+    puts ">> Launching AMQP Comlink..."
+    set :comlink_thread, Thread.new {
+      app.set :comlink, Pibi::Comlink.new
+      app.comlink.run(app.amqp)
+
+      puts ">> \tLaunched"
+    }
+
+  # end
+
 end

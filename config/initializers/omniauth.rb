@@ -4,21 +4,21 @@ configure do |app|
       OmniAuth::FailureEndpoint.new(env).redirect_to_failure
     }
 
-    provider :developer
+    provider :developer unless app.production?
 
     unless app.settings.test?
       provider :facebook,
-        app.settings.credentials['facebook'][app.settings.environment.to_s]['key'],
-        app.settings.credentials['facebook'][app.settings.environment.to_s]['secret']
+        app.oauth['facebook']['key'],
+        app.oauth['facebook']['secret']
 
       provider :google_oauth2,
-        app.settings.credentials['google']['key'],
-        app.settings.credentials['google']['secret'],
+        app.oauth['google']['key'],
+        app.oauth['google']['secret'],
         { access_type: "offline", approval_prompt: "" }
 
       provider :github,
-        app.settings.credentials['github'][app.settings.environment.to_s]['key'],
-        app.settings.credentials['github'][app.settings.environment.to_s]['secret']
+        app.oauth['github']['key'],
+        app.oauth['github']['secret']
     end
   end
 end

@@ -1,0 +1,24 @@
+development:
+  oauth: &common
+    facebook:
+      key: '557289020968037'
+      secret: 'f290c33cb6ff307f8fcec5f6ff7a8eef'
+    github:
+      key:    '891651b7111387228b1a'
+      secret: '119d29dc722463f368b7ba2d3735b0701bba68f4'
+    google:
+      key: '273415187750.apps.googleusercontent.com'
+      secret: 'wYFNI9MapJqO1ufag0eFaywP'
+
+production:
+  oauth:
+    <<: *common
+    facebook:
+      key:    '479783872068202'
+      secret: '7011a3e38a1ef97ecaa350ca40eed492'
+    github:
+      key:    '891651b7111387228b1a'
+      secret: '119d29dc722463f368b7ba2d3735b0701bba68f4'
+    google:
+      key: '273415187750.apps.googleusercontent.com'
+      secret: 'wYFNI9MapJqO1ufag0eFaywP'
