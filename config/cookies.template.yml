@@ -1,0 +1,14 @@
+development:
+  cookies: &common
+    domain: '.pibi.localhost'
+    path:   '/'
+    key:    'pibi.session'
+    secret: ''
+    secure: false
+
+production:
+  cookies:
+    <<: *common
+    domain: '.pibiapp.com'
+    secret: ''
+    secure: true

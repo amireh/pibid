@@ -1,4 +1,4 @@
-production:
+development:
   database: &common
     host: 'localhost'
     un:   'pibid'
@@ -10,6 +10,6 @@ test:
     <<: *common
     db: 'pibiv2_test'
 
-development:
+production:
   database:
     <<: *common

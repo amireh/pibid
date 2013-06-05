@@ -34,7 +34,6 @@ gem 'sinatra-cross_origin', :github => 'britg/sinatra-cross_origin', :require =>
 gem 'sinatra-can', :require => "sinatra/can"
 gem 'money', '=5.1.1'
 gem 'google_currency', '=2.2.0'
-gem 'sinatra-sse', :require => "sinatra/sse"
 gem 'eventmachine'
 gem 'moneta', :require => 'rack/session/moneta'
 gem 'amqp'
@@ -51,4 +50,5 @@ group :test do
 end
 
 group :production do
+  gem 'unicorn'
 end

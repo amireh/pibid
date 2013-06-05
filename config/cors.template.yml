@@ -1,0 +1,8 @@
+development:
+  cors: &common
+    allowed_origin: ''
+
+production:
+  cors:
+    <<: *common
+    allowed_origin: 'https://www.pibiapp.com'

@@ -4,51 +4,51 @@
   end
 
   post r, provides: [ :json ] do
-    if logged_in?
-      blank_halt! 304
+    unless logged_in?
+      api_required!({
+        email: lambda { |v|
+          if !v || v.to_s.empty? || !is_email?(v)
+            return "Please enter a valid email address."
+          end
+        },
+
+        password: lambda { |v|
+          if !v || v.to_s.length < User::MinPasswordLength
+            return "The password you entered does not seem to be correct."
+          end
+        }
+      })
+
+
+      unless u = authenticate(api_param(:email), api_param(:password))
+        u = User.new
+        u.errors.add :email, 'The email or password you entered were incorrect.'
+        halt 400, u.errors
+      end
+
+      authorize(u)
     end
 
-    puts api_params
-
-    api_required!({
-      email: lambda { |v|
-        if !v || v.to_s.empty? || !is_email?(v)
-          return "Please enter a valid email address."
-        end
-      },
-
-      password: lambda { |v|
-        if !v || v.to_s.length < User::MinPasswordLength
-          return "The password you entered does not seem to be correct."
-        end
+    respond_to do |f|
+      f.json {
+        rabl :"sessions/show"
       }
-    })
-
-
-    unless u = authenticate(api_param(:email), api_param(:password))
-      u = User.new
-      u.errors.add :email, 'The email or password you entered were incorrect.'
-      halt 400, u.errors
     end
-
-    authorize(u)
-
-    rabl :"sessions/show"
   end
 
   delete r, provides: [ :json ] do
     if !logged_in?
-      return blank_halt! 304
+      return blank_halt! 200
     end
 
     session[:id] = nil
 
-    blank_halt! 205
+    blank_halt! 200
   end
 end
 
 get '/sessions/pulse', auth: [ :user ] do
-  blank_halt! 204
+  blank_halt! 200
 end
 
 

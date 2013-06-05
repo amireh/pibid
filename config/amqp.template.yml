@@ -1,0 +1,11 @@
+development: &common
+  amqp:
+    host: 'localhost'
+    port: '5672'
+    user: 'guest'
+    password: 'guest'
+    exchange: 'amqp.fanout'
+
+production:
+  <<: *common
+
