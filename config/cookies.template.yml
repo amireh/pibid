@@ -3,12 +3,12 @@ development:
     domain: '.pibi.localhost'
     path:   '/'
     key:    'pibi.session'
-    secret: 'teehee'
+    secret: ''
     secure: false
 
 production:
   cookies:
     <<: *common
-    domain: '.pibi.kodoware.com'
-    secret: 'change me'
-    # secure: true
+    domain: '.pibiapp.com'
+    secret: ''
+    secure: true

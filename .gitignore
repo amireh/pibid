@@ -1,5 +1,12 @@
+[config]
+config/amqp.yml
+config/cookies.yml
+config/cors.yml
+config/courier.yml
+config/database.yml
+config/oauth.yml
+
 *.zip
-config/credentials.yml
 dumps
 *.tar.bz2
 *.tar.gz

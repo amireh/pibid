@@ -5,4 +5,4 @@ development:
 production:
   cors:
     <<: *common
-    allowed_origin: 'http://pibi.kodoware.com'
+    allowed_origin: 'https://www.pibiapp.com'

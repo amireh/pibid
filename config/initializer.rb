@@ -4,17 +4,8 @@ AppGithubURL  = "https://github.com/amireh/pibid"
 AppIssueURL   = "#{AppGithubURL}/issues"
 
 configure do |app|
-  enable :cross_origin
-  include Sinatra::SSE
-
-  # use Rack::Session::Cookie,
-  #   :domain => '.pibi.kodoware.com',
-  #   :secret => settings.credentials['cookie']['secret']
-
   require 'app/models/transaction'
   require 'lib/pibi'
-
-  Pibi::Preferences.init
 
   [ 'lib', 'app/helpers', 'app/models', 'app/controllers' ].each { |d|
     Dir.glob("#{d}/**/*.rb").each { |f| require f }

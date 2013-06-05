@@ -1,12 +1,11 @@
-development:
-  amqp: &common
+development: &common
+  amqp:
     host: 'localhost'
     port: '5672'
     user: 'guest'
     password: 'guest'
-    exchange: 'pibi.cloud'
+    exchange: 'amqp.fanout'
 
 production:
-  amqp:
-    <<: *common
+  <<: *common
 

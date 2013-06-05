@@ -4,7 +4,6 @@ development:
     un:   'root'
     pw:   ''
     db:   'pibid'
-    secret: 'foobar'
 
 test:
   database:
@@ -14,4 +13,3 @@ test:
 production:
   database:
     <<: *common
-    secret: 'change me'

@@ -1,4 +1,6 @@
 configure do
+  enable :cross_origin
+
   allowed_origin = settings.cors['allowed_origin']||''
   allowed_origin = :any if allowed_origin.empty?
 
