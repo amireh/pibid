@@ -1,13 +1,26 @@
-credentials:
-  cookie:
-    key: ''
-    secret: ''
-  facebook:
-    key:    ''
-    secret: ''
-  google:
-    key:    ''
-    secret: ''
-  github:
-    key:    ''
-    secret: ''
+development:
+  oauth: &common
+    host: 'http://api.pibi.kodoware.com'
+    facebook:
+      key: ''
+      secret: ''
+    github:
+      key:    ''
+      secret: ''
+    google:
+      key: ''
+      secret: ''
+
+production:
+  oauth:
+    <<: *common
+    host: 'https://api.pibiapp.com'
+    facebook:
+      key:    ''
+      secret: ''
+    github:
+      key:    ''
+      secret: ''
+    google:
+      key: ''
+      secret: ''
