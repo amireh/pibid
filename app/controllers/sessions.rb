@@ -37,6 +37,8 @@
   end
 
   delete r, provides: [ :json ] do
+    session.clear
+
     if !logged_in?
       return blank_halt! 200
     end

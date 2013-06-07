@@ -6,7 +6,7 @@ node(:id) { |r| r.id }
 node(:type) { |tx| tx.type.to_s.downcase }
 node(:amount) { |tx| tx.amount.to_f.round(2) }
 node(:currency) { |tx| tx.currency }
-node(:occured_on) { |tx| (tx.occured_on || DateTime.now).to_time.to_i + 3600 }
+node(:occured_on) { |tx| (tx.occured_on || DateTime.now).to_time.to_i }
 node(:categories) { |tx|
   tx.categories.map { |c| c.id }
 }
