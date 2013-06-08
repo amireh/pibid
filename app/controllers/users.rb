@@ -26,6 +26,9 @@ module Sinatra
       def user_from_oauth(provider, auth)
         new_user, slave, user_info = false, nil, {}
 
+        puts provider
+        puts auth.inspect
+
         # create the user if it's their first time
         unless slave = User.first({ uid: auth.uid, provider: provider })
           new_user = true

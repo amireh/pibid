@@ -61,3 +61,9 @@ Dir["./spec/support/**/*.rb"].sort.each { |f| require f }
 def some_salt
   Fixtures.salt
 end
+
+def refresh!(resource, &block)
+  ret = yield(resource) if block_given?
+  resource = resource.refresh
+  ret || resource
+end

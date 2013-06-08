@@ -1,6 +1,16 @@
 describe Transaction do
-  before do
-    mockup_user
+  before(:all) do
+    valid! fixture(:user)
+
+    class Transaction
+      public :to_account_currency
+    end
+  end
+
+  after(:all) do
+    class Transaction
+      protected :to_account_currency
+    end
   end
 
   it "should reject a tx without an amount" do
@@ -21,7 +31,7 @@ describe Transaction do
 
   it "should convert to account currency" do
     tx = @account.transactions.create({ amount: 10, currency: "JOD" })
-    tx.__to_account_currency.should == Currency["USD"].from("JOD", tx.amount)
+    tx.to_account_currency.should == Currency["USD"].from("JOD", tx.amount)
   end
 
   it "should reject a tx with an unknown currency" do
@@ -30,4 +40,26 @@ describe Transaction do
     tx.all_errors.first.should match(/Unrecognized/)
   end
 
+  it "should enforce the occurence resolution to years, months, and days" do
+    def test(tx)
+      tx.occured_on.year.should_not == 0
+      tx.occured_on.month.should_not == 0
+      tx.occured_on.day.should_not == 0
+
+      tx.occured_on.hour.should == 0
+      tx.occured_on.minute.should == 0
+      tx.occured_on.second == 0
+    end
+
+    now = DateTime.now
+
+    test(Transaction.new)
+    test(Transaction.new({ occured_on: DateTime.new(now.year, 1, 5, 23, 11, 34)}))
+    test(Transaction.new({ occured_on: DateTime.new(now.year, 1, 5, 23, 11)}))
+    test(Transaction.new({ occured_on: DateTime.new(now.year, 1, 5, 23)}))
+    test(valid! fixture(:deposit))
+    test(valid! fixture(:deposit, { occured_on: DateTime.new(now.year, 1, 5, 23, 11, 34)}))
+    test(valid! fixture(:deposit, { occured_on: DateTime.new(now.year, 1, 5, 23, 11)}))
+    test(valid! fixture(:deposit, { occured_on: DateTime.new(now.year, 1, 5, 23)}))
+  end
 end
