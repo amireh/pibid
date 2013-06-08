@@ -9,19 +9,17 @@ configure do |app|
 
     OmniAuth.config.full_host = app.oauth['host']
 
-    unless app.settings.test?
-      provider :facebook,
-        app.oauth['facebook']['key'],
-        app.oauth['facebook']['secret']
+    provider :facebook,
+      app.oauth['facebook']['key'],
+      app.oauth['facebook']['secret']
 
-      provider :google_oauth2,
-        app.oauth['google']['key'],
-        app.oauth['google']['secret'],
-        { access_type: "offline", approval_prompt: "" }
+    provider :google_oauth2,
+      app.oauth['google']['key'],
+      app.oauth['google']['secret'],
+      { access_type: "offline", approval_prompt: "" }
 
-      provider :github,
-        app.oauth['github']['key'],
-        app.oauth['github']['secret']
-    end
+    provider :github,
+      app.oauth['github']['key'],
+      app.oauth['github']['secret']
   end
 end

@@ -22,7 +22,9 @@ class Transaction
   # Transactions can be either deposits, withdrawals, or recurrings
   property :type, Discriminator
 
-  property :occured_on,   DateTime, default: lambda { |*_| DateTime.now }
+  property :occured_on,   DateTime, default: lambda { |*_|
+    now = DateTime.now; DateTime.new(now.year, now.month, now.day)
+  }
   property :created_at,   DateTime, default: lambda { |*_| DateTime.now }
 
   belongs_to :account, required: true
@@ -59,6 +61,15 @@ class Transaction
     y
   end
 
+  def enforce_occurence_resolution(dt = self.occured_on)
+    dt ||= DateTime.now
+    return DateTime.new(dt.year, dt.month, dt.day, 0, 0, 0)
+  end
+
+  def occured_on=(dt)
+    super(enforce_occurence_resolution(dt))
+  end
+
   after :create do
     add_to_account(to_account_currency)
     self.account.save
@@ -69,6 +80,10 @@ class Transaction
       self.errors.add :amount, 'Transaction amount must be a positive number.'
       throw :halt
     end
+
+    # if attribute_dirty?(:occured_on)
+    #   self.occured_on = self.enforce_occurence_resolution
+    # end
   end
 
   # adjust the account balance if our amount or currency are being updated
@@ -125,11 +140,6 @@ class Transaction
   end
 
   def add_to_account(amt)
-  end
-
-  # exposed only for unit tests, you really shouldn't need to use this
-  def __to_account_currency # :nodoc:
-    to_account_currency
   end
 
   protected

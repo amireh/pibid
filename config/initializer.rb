@@ -17,10 +17,13 @@ configure do |app|
 
   set :views, File.join($ROOT, 'app', 'views')
 
-  require "config/initializers/cors"
   require "config/initializers/datamapper"
   require "config/initializers/rabl"
   require "config/initializers/omniauth"
-  require "config/initializers/comlink"
   require "config/initializers/#{settings.environment}"
+end
+
+configure :production, :development do
+  require "config/initializers/cors"
+  require "config/initializers/comlink"
 end

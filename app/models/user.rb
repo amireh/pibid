@@ -17,8 +17,8 @@ class User
   property :id, Serial
 
   property :name,     String, length: 255, required: true, message: 'We need your name.'
-  property :provider, String, length: 255, required: true
-  property :uid,      String, length: 255, default: lambda { |*u| UUID.generate }
+  property :provider, String, length: 255, default: 'pibi'
+  property :uid,      String, length: 255, default: lambda { |*r_| UUID.generate }
   property :password, String, length: 64,  required: true, message: 'You must provide a password!'
 
   property :email,    String, length: 255, required: true,

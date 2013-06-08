@@ -1,4 +1,4 @@
-describe "Signing up for a new account" do
+describe "Users" do
   before do
     fixture_wipeout
   end
@@ -90,7 +90,9 @@ describe "Signing up for a new account" do
     end
 
     def oauth_signup(provider, params = {})
-      params = mockup_user_params.merge(params.merge({ provider: provider }))
+      params = mockup_user_params.merge(params.merge({
+        provider: provider
+      }))
 
       OmniAuth.config.add_mock(provider.to_sym, params)
       # request.env["omniauth.auth"] = OmniAuth.config.mock_auth[provider.to_sym]
@@ -109,6 +111,16 @@ describe "Signing up for a new account" do
     scenario "Authenticating for the first time" do
       oauth_signup("developer") do |rc|
         rc.should succeed
+      end
+    end
+
+    scenario "Bad auth hash" do
+      oauth_signup("developer", { email: nil }) do |rc|
+        rc.should fail(500, 'need your email')
+      end
+
+      oauth_signup("developer", { email: '' }) do |rc|
+        rc.should fail(500, 'need your email')
       end
     end
 
@@ -161,9 +173,15 @@ describe "Signing up for a new account" do
         oauth_user.link.should == @user
 
         sign_out
+        api { get "/sessions" }.should fail(401, "You must sign in first")
 
         oauth_signin("developer", oauth_user) do |rc|
           rc.should succeed
+
+          # we need to stamp the cookie manually
+          cookie = last_response.header["Set-Cookie"]
+          header "Cookie", cookie
+
           api { get "/sessions" }.should succeed
           api { get "/users/#{@user.id}" }.should succeed
         end

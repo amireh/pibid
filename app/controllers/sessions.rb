@@ -55,7 +55,7 @@ end
 
 
 # Support both GET and POST for callbacks
-%w(get post).each do |method|
+[ 'get', 'post' ].each do |method|
   send(method, "/auth/:provider/callback") do |provider|
     origin          = env['omniauth.origin'] || env['HTTP_REFERER']
     should_redirect = !!(origin && !origin.to_s.empty?)

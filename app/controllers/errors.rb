@@ -70,9 +70,11 @@ error 500..503 do
     # raise e
   end
 
+  errbody = request.env['sinatra.error'] || response.body || 'Internal error'
+
   if settings.test?
-    on_api_error(request.env['sinatra.error'] || response.body).to_json
+    on_api_error(errbody).to_json
   else
-    on_api_error("Internal error").to_json
+    on_api_error(errbody).to_json
   end
 end

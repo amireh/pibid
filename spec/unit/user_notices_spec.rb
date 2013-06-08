@@ -36,13 +36,13 @@ describe Notice do
     @u.email_verified.should == false
   end
 
-  it "should generate a user temporary password notice" do
-    @u.auto_password.should == false
-    pnc = @u.pending_notices.count
+  # it "should generate a user temporary password notice" do
+  #   @u.auto_password.should == false
+  #   pnc = @u.pending_notices.count
 
-    @u.generate_temporary_password
-    @u.auto_password.should == true
-    @u.pending_notices.count.should == pnc+1
-  end
+  #   @u.generate_temporary_password
+  #   @u.auto_password.should == true
+  #   @u.pending_notices.count.should == pnc+1
+  # end
 
 end
