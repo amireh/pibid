@@ -28,30 +28,28 @@ module Pibi
       log "\tPassword: #{options['password'].length}"
       log "\tExchange: #{options['exchange']}"
 
-      EventMachine.next_tick do
-        AMQP.connect("amqp://#{options['user']}:#{options['password']}@#{options['host']}:#{options['port']}") do |connection|
-          @connection = connection
-          log "connection established, opening channel..."
+      AMQP.connect("amqp://#{options['user']}:#{options['password']}@#{options['host']}:#{options['port']}") do |connection|
+        @connection = connection
+        log "connection established, opening channel..."
 
-          AMQP::Channel.new(connection) do |channel|
-            @channel = channel
-            log "channel open, passively declaring exchange..."
+        AMQP::Channel.new(connection) do |channel|
+          @channel = channel
+          log "channel open, passively declaring exchange..."
 
-            exchange_options = {
-              durable:      true,
-              auto_delete:  false,
-              passive:      true
-            }
+          exchange_options = {
+            durable:      true,
+            auto_delete:  false,
+            passive:      true
+          }
 
-            channel.fanout(options['exchange'], exchange_options) do |exchange, declare_ok|
-              log "ready for broadcasting to '#{options['exchange']}'"
+          channel.fanout(options['exchange'], exchange_options) do |exchange, declare_ok|
+            log "ready for broadcasting to '#{options['exchange']}'"
 
-              @exchange = exchange
-              @queued.each { |d| broadcast(d) }
+            @exchange = exchange
+            @queued.each { |d| broadcast(d) }
 
-              lock do
-                @queued = []
-              end
+            lock do
+              @queued = []
             end
           end
         end
@@ -102,15 +100,14 @@ configure do |app|
   end
 
 
-  # EM.next_tick do
+  EM.next_tick do
     puts ">> Launching AMQP Comlink..."
     set :comlink_thread, Thread.new {
       app.set :comlink, Pibi::Comlink.new
       app.comlink.run(app.amqp)
 
-      puts ">> \tLaunched"
+      puts ">> Launched"
     }
-
-  # end
+  end
 
 end
