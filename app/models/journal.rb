@@ -71,8 +71,8 @@ class Journal
     @scopes['user'] = self.user
     @collections['users'] = User
 
-    resolve_dependencies
     validate_structure!
+    resolve_dependencies
 
     # resolve scopes and collections, and validate operation entries
     @entries.each_pair do |scope, collections|
