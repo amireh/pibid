@@ -1,9 +1,16 @@
 development:
   database: &common
     host: 'localhost'
+<<<<<<< HEAD
     un:   'pibid'
     pw:   'p1b1d'
     db:   'pibiv2'
+=======
+    port: '3306'
+    un:   'root'
+    pw:   ''
+    db:   'pibid'
+>>>>>>> 91252808efc9b986857a416a9cc511f88023f1b3
 
 test:
   database:
