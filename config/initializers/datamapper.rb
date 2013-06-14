@@ -9,7 +9,7 @@ configure do
     secure: settings.cookies['secure'],
     store: Moneta.new(:DataMapper, {
       repository: :default,
-      setup: "mysql://#{dbc[:un]}:#{dbc[:pw]}@#{dbc[:host]}/#{dbc[:db]}"
+      setup: "mysql://#{dbc[:un]}:#{dbc[:pw]}@#{dbc[:host]}:#{dbc[:port]}/#{dbc[:db]}"
     })
   }
 

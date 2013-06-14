@@ -1,6 +1,7 @@
 development:
   database: &common
     host: 'localhost'
+    port: '3306'
     un:   'root'
     pw:   ''
     db:   'pibid'
