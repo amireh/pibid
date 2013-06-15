@@ -116,6 +116,7 @@ class Journal
 
   CollectionPriorityList = [
     :users,
+    :accounts,
     :categories,
     :payment_methods,
     :transactions,
@@ -123,9 +124,27 @@ class Journal
   ]
 
   def resolve_dependencies()
-    @entries = Hash[@entries.sort_by { |k,v| ScopePriorityList.index(k.to_sym) }]
+
+    @entries = Hash[@entries.sort_by { |k,v|
+      scope_idx = ScopePriorityList.index(k.to_sym)
+
+      if scope_idx.nil?
+        reject! :structure, "Unknown scope '#{k}'."
+      end
+
+      scope_idx
+    }]
+
     @entries.each_pair { |scope, collections|
-      @entries[scope] = Hash[collections.sort_by { |k,v| CollectionPriorityList.index(k.to_sym) }]
+      @entries[scope] = Hash[collections.sort_by { |k,v|
+        collection_idx = CollectionPriorityList.index(k.to_sym)
+
+        if collection_idx.nil?
+          reject! :structure, "Unknown collection '#{k}' in scope #{scope}."
+        end
+
+        collection_idx
+      }]
     }
   end
 

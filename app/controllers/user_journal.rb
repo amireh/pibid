@@ -30,7 +30,13 @@ post '/users/:user_id/journal',
   begin
     @journal.commit(self, { graceful: graceful })
   rescue ArgumentError => e
-    halt 400, @journal.errors
+    errmsg = @journal.errors
+    errmsg = e.message if errmsg.empty?
+
+    puts e.inspect
+    puts e.backtrace
+
+    halt 400, errmsg
   end
 
   unless @journal.errors.empty?
