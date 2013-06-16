@@ -5,7 +5,7 @@ module Pibi
       @broadcast_lock = Mutex.new
       @exchanges = {
         sync:     { object: nil, key: '', queued: [], type: "fanout" },
-        reports:  { object: nil, key: '', queued: [], type: "topic" }
+        reports:  { object: nil, key: '', queued: [], type: "direct" }
       }
 
       super()
@@ -65,7 +65,7 @@ module Pibi
       end
     end
 
-    def broadcast(key, data)
+    def broadcast(key, data, options = {})
       key = key.to_sym
 
       if !exchange = @exchanges[key][:object]
@@ -76,7 +76,7 @@ module Pibi
 
       EM.next_tick do
         lock do
-          exchange.publish( data.to_json )
+          exchange.publish( data.to_json, options || {} )
         end
       end
 
