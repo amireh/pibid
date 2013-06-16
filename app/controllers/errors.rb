@@ -58,7 +58,7 @@ error 500..503 do
       details: { sinatra_error: request.env['sinatra.error'] }.to_json
     })
 
-    settings.comlink.broadcast({
+    settings.comlink.broadcast(:reports, {
       id: "submissions.internal_error",
       data: {
         id: bug_submission.id,

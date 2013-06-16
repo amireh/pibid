@@ -2,8 +2,11 @@ module Pibi
   class Comlink
     def initialize()
       @connection, @channel, @exchange = nil,nil,nil
-      @queued = []
       @broadcast_lock = Mutex.new
+      @exchanges = {
+        sync:     { object: nil, key: '', queued: [], type: "fanout" },
+        reports:  { object: nil, key: '', queued: [], type: "topic" }
+      }
 
       super()
     end
@@ -26,7 +29,8 @@ module Pibi
       log "\tPort: #{options['port']}"
       log "\tUser: #{options['user']}"
       log "\tPassword: #{options['password'].length}"
-      log "\tExchange: #{options['exchange']}"
+      log "\tCloud Sync Exchange: #{options['exchanges']['sync']}"
+      log "\tReports Exchange:    #{options['exchanges']['reports']}"
 
       AMQP.connect("amqp://#{options['user']}:#{options['password']}@#{options['host']}:#{options['port']}") do |connection|
         @connection = connection
@@ -42,39 +46,46 @@ module Pibi
             passive:      true
           }
 
-          channel.fanout(options['exchange'], exchange_options) do |exchange, declare_ok|
-            log "ready for broadcasting to '#{options['exchange']}'"
+          @exchanges.each_pair do |exkey, h|
+            h[:key] = options['exchanges'][exkey.to_s]
 
-            @exchange = exchange
-            @queued.each { |d| broadcast(d) }
+            channel.send(h[:type], h[:key], exchange_options) do |e,declare_ok|
+              log "ready for broadcasting to '#{h[:key]}'"
 
-            lock do
-              @queued = []
+              h[:object] = e
+              h[:queued].each { |d| broadcast(d) }
+
+              lock do
+                h[:queued] = []
+              end
             end
           end
+
         end
       end
     end
 
-    def broadcast(data)
-      if !@exchange
-        return __queue(data)
+    def broadcast(key, data)
+      key = key.to_sym
+
+      if !exchange = @exchanges[key][:object]
+        return __queue(key, data)
       end
 
       # puts "broadcasting: #{data}"
 
       EM.next_tick do
         lock do
-          @exchange.publish( data.to_json )
+          exchange.publish( data.to_json )
         end
       end
 
       self
     end
 
-    def __queue(data)
+    def __queue(key, data)
       lock do
-        @queued << data
+        @exchanges[key.to_sym][:queued] << data
       end
     end
 

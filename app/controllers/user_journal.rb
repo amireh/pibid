@@ -63,7 +63,7 @@ post '/users/:user_id/journal',
   @journal.data = rabl(:"users/broadcast_journal")
 
   if @journal.save
-    settings.comlink.broadcast({
+    settings.comlink.broadcast(:sync, {
       id: "journals.sync",
       client_id: @user.id,
       data: {

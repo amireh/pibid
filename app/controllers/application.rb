@@ -28,7 +28,7 @@ post '/submissions/bugs', provides: [ :json ] do
     user:     current_user
   })
 
-  settings.comlink.broadcast({
+  settings.comlink.broadcast(:reports, {
     id: "submissions.bug",
     data: {
       id: bug_submission.id,

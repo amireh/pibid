@@ -44,7 +44,7 @@ post '/users/:user_id/notices/:type',
   @notice = @n
 
   if @n
-    settings.comlink.broadcast({
+    settings.comlink.broadcast(:reports, {
       id: "notices.#{type}",
       client_id: @user.id,
       data: {
@@ -108,7 +108,7 @@ post '/users/reset_password',
     halt 500, @user.errors
   end
 
-  settings.comlink.broadcast({
+  settings.comlink.broadcast(:reports, {
     id: "notices.password",
     client_id: @user.id,
     data: {
