@@ -66,5 +66,5 @@ group :production do
   gem 'unicorn'
 end
 
-gem 'sinatra-api', :path => '/home/kandie/Workspace/Projects/sinatra-api'
+gem 'sinatra-api'
 gem 'ruby-progressbar'
