@@ -90,7 +90,7 @@ GEM
     google_currency (2.2.0)
       money (~> 5.1.0)
       multi_json (>= 1.0.0)
-    hashie (1.2.0)
+    hashie (2.0.5)
     httpauth (0.2.0)
     i18n (0.6.1)
     json (1.7.5)
@@ -112,8 +112,8 @@ GEM
       jwt (~> 0.1.4)
       multi_json (~> 1.0)
       rack (~> 1.2)
-    omniauth (1.1.1)
-      hashie (~> 1.2)
+    omniauth (1.1.4)
+      hashie (>= 1.2, < 3)
       rack
     omniauth-facebook (1.4.1)
       omniauth-oauth2 (~> 1.1.0)
@@ -129,7 +129,7 @@ GEM
     rabl (0.7.9)
       activesupport (>= 2.3.14)
       multi_json (~> 1.0)
-    rack (1.4.1)
+    rack (1.5.2)
     rack-protection (1.3.2)
       rack
     rack-test (0.6.2)
@@ -183,7 +183,7 @@ DEPENDENCIES
   money (= 5.1.1)
   multi_json
   mysql
-  omniauth
+  omniauth (~> 1.1.4)
   omniauth-facebook
   omniauth-github
   omniauth-google-oauth2

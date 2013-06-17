@@ -102,8 +102,14 @@ end
 end
 
 get '/auth/failure' do
-  origin          = env['omniauth.origin'] || env['HTTP_REFERER']
+  origin          = params[:origin] || env['omniauth.origin'] || env['HTTP_REFERER']
   should_redirect = !!(origin && !origin.to_s.empty?)
+
+  if should_redirect
+    origin = extract_origin(origin)
+  end
+
+  provider = params[:strategy] || env['omniauth.strategy'].name
 
   if should_redirect
     return redirect "#{origin.to_s}/oauth/failure/#{provider}/provider_error"
