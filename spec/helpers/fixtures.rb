@@ -159,8 +159,8 @@ module Fixtures
         amount:     rand(50) + 1,
         frequency: :daily,
         flow_type: :positive,
-        recurs_on_month: Time.now.month,
-        recurs_on_day: Time.now.day,
+        recurs_on_month:  Time.now.month,
+        recurs_on_day:    Time.now.day,
         currency:   account.currency,
         categories: [],
         payment_method: nil
