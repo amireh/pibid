@@ -35,8 +35,10 @@ class Recurring < Transaction
   # validates_presence_of :note, message: 'Must provide a name for this bill'
 
   def build_recurrence_date(frequency, month, day)
-    recurs_on, this_year = nil, Time.now.year
+    recurs_on = nil
+    this_year = Time.now.year
 
+    frequency = frequency.to_sym
     month ||= 0
     day   ||= 0
 
@@ -61,7 +63,7 @@ class Recurring < Transaction
     when :monthly
       # only the day is used in this case
       begin
-        recurs_on = DateTime.new(this_year, 1, day.to_i)
+        recurs_on = DateTime.new(this_year, 1, day)
       rescue
         errors.add :recurs_on, "Bad recurrence day: [#{day}]"
         throw :halt
@@ -70,13 +72,13 @@ class Recurring < Transaction
     when :yearly
       # the day and month are used in this case
       begin
-        recurs_on = DateTime.new(this_year, month.to_i, day.to_i)
+        recurs_on = DateTime.new(this_year, month, day)
       rescue
         errors.add :recurs_on, "Bad recurrence day or month [#{day}, #{month}]"
         throw :halt
       end
     else
-      recurs_on = DateTime.now
+      recurs_on = DateTime.new(this_year, 1, day)
     end
 
     recurs_on

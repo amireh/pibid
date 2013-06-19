@@ -191,4 +191,66 @@ describe "Recurring Transactions" do
     rt.applicable?(1.year.ago).should     be_false
   end
 
+  it "should use current year and month in daily RTs" do
+    t = valid! fixture(:recurring, {
+      frequency: :daily,
+      recurs_on_day: 5
+    })
+
+    t.recurs_on.year.should   == Time.now.year
+    t.recurs_on.month.should  == 1
+    t.recurs_on.day.should == 5
+
+    t = valid! fixture(:recurring, {
+      frequency: :daily,
+      recurs_on_month: 7,
+      recurs_on_day: 5
+    })
+    t.recurs_on.year.should   == Time.now.year
+    t.recurs_on.month.should  == 1
+    t.recurs_on.day.should == 5
+  end
+
+  it "should use current year and zero out month in monthly RTs" do
+    t = valid! fixture(:recurring, {
+      frequency: :monthly,
+      recurs_on_month: 5,
+      recurs_on_day: 12
+    })
+
+    t.recurs_on.year.should   == Time.now.year
+    t.recurs_on.month.should  == 1
+    t.recurs_on.day.should == 12
+
+    t = valid! fixture(:recurring, {
+      frequency: :monthly,
+      recurs_on_month: 7,
+      recurs_on_day: 5
+    })
+    t.recurs_on.year.should   == Time.now.year
+    t.recurs_on.month.should  == 1
+    t.recurs_on.day.should == 5
+  end
+
+  it "should use all of year, month, and day in yearly RTs" do
+    t = valid! fixture(:recurring, {
+      frequency: :yearly,
+      recurs_on_month: 5,
+      recurs_on_day: 12
+    })
+
+    t.recurs_on.year.should   == Time.now.year
+    t.recurs_on.month.should  == 5
+    t.recurs_on.day.should == 12
+
+    t = valid! fixture(:recurring, {
+      frequency: :yearly,
+      recurs_on_month: 7,
+      recurs_on_day: 5
+    })
+    t.recurs_on.year.should   == Time.now.year
+    t.recurs_on.month.should  == 7
+    t.recurs_on.day.should == 5
+  end
+
 end
