@@ -6,9 +6,9 @@ GIT
 
 GIT
   remote: https://github.com/amireh/timetastic
-  revision: 2a5cd967f1a085d83d719a0db8d59e6f410ee4ca
+  revision: 802a73598800f6984b001cdb94bc526060562a6e
   specs:
-    timetastic (0.1.5)
+    timetastic (0.1.6)
 
 GIT
   remote: https://github.com/sinatra/sinatra

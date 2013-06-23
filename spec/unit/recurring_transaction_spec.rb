@@ -1,4 +1,5 @@
 describe "Recurring Transactions" do
+  TT = Timetastic
 
   before(:all) do
     valid! fixture(:user)
@@ -103,19 +104,20 @@ describe "Recurring Transactions" do
 
   it "should not commit the transaction more than necessary" do
     @account.recurrings.all.count.should == 0
-    rt = mockup_rt({ amount: 5, flow_type: :negative })
+    rt = mockup_rt({
+      amount: 5,
+      flow_type: :negative
+    })
     @account.recurrings.all.count.should == 1
 
     @account.balance.to_f.should == 0
 
-    rt.applicable?.should be_true
-    rt.commit.should be_true
-    rt.applicable?.should be_false
+    rt.due?(1.day.ahead).should be_true
+    rt.commit(1.day.ahead).should be_true
+    rt.due?(1.day.ahead).should be_false
 
     @account = @account.refresh
     @account.balance.to_f.should == -5.0
-
-    rt.commit.should be_false
   end
 
   it "should commit a daily RT only once a day" do
@@ -126,46 +128,46 @@ describe "Recurring Transactions" do
       account: @account
     })
 
-    rt.applicable?.should be_true
-    rt.commit.should be_true
-    rt.applicable?.should be_false
+    rt.applicable?(1.day.ahead).should be_true
+    rt.commit(1.day.ahead).should be_true
+    rt.applicable?(1.day.ahead).should be_false
 
     @account = @account.refresh
     @account.balance.to_f.should == -10.0
 
-    t = Time.now
-
-    rt.applicable?(1.day.ahead).should be_true
+    rt.applicable?(2.days.ahead).should be_true
     rt.applicable?(1.month.ahead).should be_true
     rt.applicable?(1.year.ahead).should be_true
     rt.applicable?(1.day.ago).should be_false
+    rt.applicable?(Time.now).should be_false
     rt.applicable?(1.month.ago).should be_false
     rt.applicable?(1.year.ago).should be_false
   end
 
   it "should commit a monthly RT only once a month" do
-    rt = mockup_rt({
+    rt = valid! fixture(:recurring, {
       amount: 10,
       flow_type: :negative,
       frequency: :monthly,
-      account:    @account
+      account:    @account,
+      recurs_on_day: Time.now.day
     })
 
-    rt.applicable?.should be_true
-    rt.commit.should be_true
-    rt.applicable?.should be_false
+    rt.applicable?(1.day.ahead).should be_false
+    rt.applicable?(1.month.ahead).should be_true
+    rt.applicable?(1.year.ahead).should be_true
+    rt.applicable?(1.day.ago).should be_false
+    rt.applicable?(1.month.ago).should be_false
+    rt.applicable?(1.year.ago).should be_false
+
+    rt.applicable?(1.month.ahead).should be_true
+    rt.commit(1.month.ahead).should be_true
+    rt.applicable?(1.month.ahead).should be_false
 
     @account = @account.refresh
     @account.balance.to_f.should == -10.0
 
     rt = rt.refresh
-
-    rt.applicable?(1.day.ahead).should be_false
-    rt.applicable?(DateTime.new(1.month.ahead.year, 1.month.ahead.month, rt.recurs_on.day)).should be_true
-    rt.applicable?(1.year.ahead).should be_true
-    rt.applicable?(1.day.ago).should be_false
-    rt.applicable?(1.month.ago).should be_false
-    rt.applicable?(1.year.ago).should be_false
   end
 
   it "should commit a yearly RT only once a year" do
@@ -176,16 +178,16 @@ describe "Recurring Transactions" do
       account: @account
     })
 
-    rt.applicable?.should be_true
-    rt.commit.should be_true
-    rt.applicable?.should be_false
+    rt.applicable?(1.year.ahead).should be_true
+    rt.commit(1.year.ahead).should be_true
+    rt.applicable?(1.year.ahead).should be_false
 
     @account = @account.refresh
     @account.balance.to_f.should == -10.0
 
     rt.applicable?(1.day.ahead).should    be_false
     rt.applicable?(1.month.ahead).should  be_false
-    rt.applicable?(1.year.ahead).should   be_true
+    rt.applicable?(2.years.ahead).should   be_true
     rt.applicable?(1.day.ago).should      be_false
     rt.applicable?(1.month.ago).should    be_false
     rt.applicable?(1.year.ago).should     be_false
@@ -252,5 +254,146 @@ describe "Recurring Transactions" do
     t.recurs_on.month.should  == 7
     t.recurs_on.day.should == 5
   end
+
+  context '#next_billing_date' do
+    before(:all) do
+      @last_zero_hours_value = Timetastic.zero_hours
+      Timetastic.zero_hours = true
+    end
+    after(:all) do
+      Timetastic.zero_hours = @last_zero_hours_value
+    end
+
+    it ':yearly' do
+      now = Time.now
+
+      t = valid! fixture(:recurring, {
+        frequency: :yearly,
+        recurs_on_month: 5,
+        recurs_on_day: 12,
+        created_at: Time.new(2013, 6, 1)
+      })
+
+      t.next_billing_date.should == TT.zero(2014, 5, 12)
+
+      t.next_billing_date({
+        relative_to: TT.zero(2013, 5, 7)
+      }).should == TT.zero(2013, 5, 12)
+
+      t.next_billing_date({
+        relative_to: 1.year.ago(t.created_at)
+      }).should == TT.zero(2013, 5, 12)
+
+      t.commit(t.next_billing_date).should be_true
+      t = t.refresh
+      t.next_billing_date.should == TT.zero(2015, 5, 12)
+
+      t.commit(t.next_billing_date).should be_true
+      t = t.refresh
+      t.next_billing_date.should == TT.zero(2016, 5, 12)
+    end
+
+    it ':monthly' do
+      t = valid! fixture(:recurring, {
+        frequency: :monthly,
+        recurs_on_day: 3,
+        created_at: Time.new(2013, 6, 1)
+      })
+
+      now = TT.zero Time.new(2013,6,2)
+      t.next_billing_date(t.commit_anchor, now).should ==
+        TT.zero(Time.new(2013, 6, 3))
+
+      now = TT.zero Time.new(2013,6,4)
+      t.next_billing_date(t.commit_anchor, now).should ==
+        TT.zero(Time.new(2013, 7, 3))
+
+      now = TT.zero Time.new(2013,7,2)
+      t.next_billing_date(t.commit_anchor, now).should ==
+        TT.zero(Time.new(2013, 7, 3))
+
+      now = TT.zero Time.new(2013,7,3)
+      t.next_billing_date(t.commit_anchor, now).should ==
+        TT.zero(Time.new(2013, 7, 3))
+    end
+
+    it ':daily' do
+      now = Time.now
+
+      t = valid! fixture(:recurring, {
+        frequency: :daily,
+        created_at: Time.new(2013, 6, 1)
+      })
+
+      now = TT.zero Time.new(2013,6,1)
+      t.next_billing_date(t.commit_anchor, now).should ==
+        TT.zero(Time.new(2013, 6, 2))
+
+      now = TT.zero Time.new(2013,6,2)
+      t.next_billing_date(t.commit_anchor, now).should ==
+        TT.zero(Time.new(2013, 6, 2))
+
+      t.update!({
+        created_at: DateTime.now
+      })
+
+      t.next_billing_date.should == 1.day.ahead
+    end
+  end
+
+  context '#all_occurences' do
+    before(:all) do
+      @last_zero_hours_value = TT.zero_hours
+      TT.zero_hours = true
+    end
+    after(:all) do
+      TT.zero_hours = @last_zero_hours_value
+    end
+
+    it ':daily' do
+      now = Time.now
+
+      t = valid! fixture(:recurring, {
+        frequency: :daily,
+        created_at: 7.days.ago
+      })
+
+      t.all_occurences.length.should == 7
+
+      t.update!({ created_at: 1.month.ago })
+      t.all_occurences.length.should == TT.days_between(TT.zero(t.created_at.to_time), TT.zero(Time.now))
+
+      t.update!({ created_at: 1.month.ahead })
+      t.all_occurences.length.should == 0
+
+      t.update!({ created_at: 1.week.ago })
+      t.all_occurences(3.days.ago).length.should == 4
+    end
+
+
+    # it ':monthly' do
+    #   now = TT.zero Time.now
+
+    #   t = valid! fixture(:recurring, {
+    #     frequency: :monthly,
+    #     created_at: 1.year.ago
+    #   })
+
+    #   t.all_occurences.length.should == 12
+
+    #   t.update!({ created_at: 1.month.ago })
+    #   t.all_occurences.length.should == 1
+
+    #   t.update!({ created_at: 1.week.ago })
+    #   t.all_occurences.length.should == 1
+
+    #   t.update!({ created_at: 1.month.ahead })
+    #   t.all_occurences.length.should == 0
+    # end
+
+
+  end
+
+
 
 end
