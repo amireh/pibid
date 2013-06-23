@@ -29,6 +29,7 @@ class Transaction
 
   belongs_to :account, required: true
   belongs_to :payment_method, required: false, default: lambda { |tx,*_| tx.account.user.payment_method }
+  belongs_to :recurring, required: false
 
   has n, :categories, :through => Resource, :constraint => :skip
 

@@ -162,6 +162,7 @@ module Fixtures
         recurs_on_month:  Time.now.month,
         recurs_on_day:    Time.now.day,
         currency:   account.currency,
+        created_at: DateTime.now,
         categories: [],
         payment_method: nil
       })

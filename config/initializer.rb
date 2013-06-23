@@ -17,6 +17,8 @@ configure do |app|
 
   set :views, File.join($ROOT, 'app', 'views')
 
+  Timetastic.zero_hours = true
+
   require "config/initializers/datamapper"
   require "config/initializers/rabl"
   require "config/initializers/omniauth"
