@@ -52,11 +52,16 @@ helpers do
     api_transform! :flow_type do |v| v.to_sym end
     api_transform! :frequency do |v| v.to_sym end
 
-    transaction.attributes = api_params({
+    data = {
       active:         api_has_param?(:active) ? api_param(:active) : true,
       payment_method: @pm || user.payment_method,
-      categories:     (api_consume!(:categories)||[]).map { |cid| user.categories.get(cid) }.reject(&:nil?)
-    })
+    }
+
+    if api_has_param?(:categories)
+      data[:categories] = (api_consume!(:categories)||[]).map { |cid| user.categories.get(cid) }.reject(&:nil?)
+    end
+
+    transaction.attributes = api_params(data)
 
     unless transaction.save
       halt 400, transaction.errors

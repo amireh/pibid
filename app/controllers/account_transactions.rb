@@ -68,12 +68,15 @@ helpers do
       user.payment_methods.get(pm_id) || user.payment_method
     end
 
-    categories = (api_consume!(:categories)||[]).map { |cid| user.categories.get(cid) }.reject(&:nil?)
+    data = {
+      payment_method: pm
+    }
 
-    transaction.attributes = api_params({
-      payment_method: pm,
-      categories:     categories
-    })
+    if api_has_param?(:categories)
+      data[:categories] = (api_consume!(:categories)||[]).map { |cid| user.categories.get(cid) }.reject(&:nil?)
+    end
+
+    transaction.attributes = api_params(data)
 
     unless transaction.save
       halt 400, transaction.errors

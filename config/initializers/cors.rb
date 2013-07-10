@@ -12,3 +12,9 @@ configure do
   set :allow_credentials, true
   set :max_age, "1728000"
 end
+
+options '*' do
+  response.headers['Access-Control-Max-Age'] = '1728000'
+
+  halt 200
+end
