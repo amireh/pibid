@@ -2,12 +2,6 @@ before do
   content_type :json unless request.request_method == 'OPTIONS'
 end
 
-options '*' do
-  response['Access-Control-Max-Age'] = '1728000'
-
-  halt 200
-end
-
 get '/pulse' do
   blank_halt!
 end

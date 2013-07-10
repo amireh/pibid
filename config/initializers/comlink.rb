@@ -65,6 +65,10 @@ module Pibi
       end
     end
 
+    def set_debug(flag)
+      @debug = flag
+    end
+
     def broadcast(key, data, options = {})
       key = key.to_sym
 
@@ -76,7 +80,14 @@ module Pibi
 
       EM.next_tick do
         lock do
-          exchange.publish( data.to_json, options || {} )
+          begin
+            exchange.publish( data.to_json, options || {} )
+          rescue JSON::NestingError => e
+            if @debug
+              puts data
+              raise e
+            end
+          end
         end
       end
 
@@ -116,6 +127,7 @@ configure do |app|
     set :comlink_thread, Thread.new {
       app.set :comlink, Pibi::Comlink.new
       app.comlink.run(app.amqp)
+      app.comlink.set_debug settings.development?
 
       puts ">> Launched"
     }
