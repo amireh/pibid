@@ -90,16 +90,18 @@ put '/users/:user_id/notices/:type/:token',
   end
 end
 
-post '/users/reset_password',
-  auth: [ :guest ],
-  provides: [ :json ] do
+post '/users/reset_password', provides: [ :json ] do
 
-  api_required!({
-    email: nil
-  })
+  if logged_in?
+    @user = current_user
+  else
+    api_required!({
+      email: nil
+    })
 
-  unless @user = User.first({ email: api_param(:email) })
-    halt 400, "No account was found registered to the email address '#{api_param(:email)}'."
+    unless @user = User.first({ email: api_param(:email) })
+      halt 400, "No account was found registered to the email address '#{api_param(:email)}'."
+    end
   end
 
   @user.notices.all({ type: 'password' }).destroy
@@ -125,9 +127,7 @@ post '/users/reset_password',
   end
 end
 
-put '/users/reset_password/:token',
-  auth: [ :guest ],
-  provides: [ :json ] do |token|
+put '/users/reset_password/:token', provides: [ :json ] do |token|
 
   api_required!({
     current:  nil,
@@ -147,7 +147,7 @@ put '/users/reset_password/:token',
     halt 400, @user.errors
   end
 
-  authorize(@user)
+  authorize(@user) unless logged_in?
 
   respond_to do |f|
     f.json { '{}' }
