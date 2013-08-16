@@ -1,5 +1,4 @@
 module DataMapper
-
   module Validations
     class ValidationErrors
       def to_json(ctx = nil)

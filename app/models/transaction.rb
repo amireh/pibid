@@ -62,13 +62,13 @@ class Transaction
     y
   end
 
-  def enforce_occurence_resolution(dt = self.occured_on)
+  def enforce_occurrence_resolution(dt = self.occured_on)
     dt ||= DateTime.now
     return DateTime.new(dt.year, dt.month, dt.day, 0, 0, 0)
   end
 
   def occured_on=(dt)
-    super(enforce_occurence_resolution(dt))
+    super(enforce_occurrence_resolution(dt))
   end
 
   after :create do
@@ -83,7 +83,7 @@ class Transaction
     end
 
     # if attribute_dirty?(:occured_on)
-    #   self.occured_on = self.enforce_occurence_resolution
+    #   self.occured_on = self.enforce_occurrence_resolution
     # end
   end
 

@@ -40,7 +40,7 @@ describe Transaction do
     tx.all_errors.first.should match(/Unrecognized/)
   end
 
-  it "should enforce the occurence resolution to years, months, and days" do
+  it "should enforce the occurrence resolution to years, months, and days" do
     def test(tx)
       tx.occured_on.year.should_not == 0
       tx.occured_on.month.should_not == 0

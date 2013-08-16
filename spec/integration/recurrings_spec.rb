@@ -1,6 +1,6 @@
 require 'rabl'
 
-describe "Transactions" do
+describe "Recurrings" do
   before(:all) do
     valid! fixture(:user)
   end

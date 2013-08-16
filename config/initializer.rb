@@ -5,7 +5,6 @@ AppIssueURL   = "#{AppGithubURL}/issues"
 
 configure do |app|
   require 'app/models/transaction'
-  require 'lib/pibi'
 
   [ 'lib', 'app/helpers', 'app/models', 'app/controllers' ].each { |d|
     Dir.glob("#{d}/**/*.rb").each { |f| require f }
@@ -16,8 +15,6 @@ configure do |app|
   # puts "User categories: #{User.default_categories}"
 
   set :views, File.join($ROOT, 'app', 'views')
-
-  Timetastic.zero_hours = true
 
   require "config/initializers/datamapper"
   require "config/initializers/rabl"

@@ -5,12 +5,6 @@ GIT
     sinatra-cross_origin (0.2.0)
 
 GIT
-  remote: https://github.com/amireh/timetastic
-  revision: 802a73598800f6984b001cdb94bc526060562a6e
-  specs:
-    timetastic (0.1.6)
-
-GIT
   remote: https://github.com/sinatra/sinatra
   revision: eed4f71f4ff5a70f43c803fa6787920e9d01218b
   specs:
@@ -93,6 +87,7 @@ GEM
     hashie (2.0.5)
     httpauth (0.2.0)
     i18n (0.6.1)
+    ice_cube (0.10.1)
     json (1.7.5)
     json_pure (1.7.5)
     jwt (0.1.5)
@@ -167,6 +162,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  activesupport (= 3.2.11)
   addressable
   amqp
   dm-constraints (>= 1.2.0)
@@ -178,6 +174,7 @@ DEPENDENCIES
   dm-validations (>= 1.2.0)
   eventmachine
   google_currency (= 2.2.0)
+  ice_cube (= 0.10.1)
   json
   moneta
   money (= 5.1.1)
@@ -196,7 +193,6 @@ DEPENDENCIES
   sinatra-contrib!
   sinatra-cross_origin!
   thin
-  timetastic!
   unicorn
   uuid
   yajl-ruby
