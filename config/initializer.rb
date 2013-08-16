@@ -5,7 +5,6 @@ AppIssueURL   = "#{AppGithubURL}/issues"
 
 configure do |app|
   require 'app/models/transaction'
-  require 'lib/pibi'
 
   [ 'lib', 'app/helpers', 'app/models', 'app/controllers' ].each { |d|
     Dir.glob("#{d}/**/*.rb").each { |f| require f }

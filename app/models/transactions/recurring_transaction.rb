@@ -5,19 +5,6 @@ class Recurring < Transaction
   belongs_to :account, required: true
   has n, :transactions, :constraint => :set_nil
 
-  FrequencyIntervals = {
-    daily:    86400,
-    weekly:   604800,
-    monthly:  2.63e+6,
-    yearly:   3.156e+7
-  }
-
-  FrequencyMethods = {
-    daily:    :days,
-    monthly:  :months,
-    yearly:   :years
-  }
-
   attr_accessor :recurs_on_month, :recurs_on_day
 
   property :flow_type,  Enum[ :positive, :negative ],      default: :positive
@@ -48,7 +35,6 @@ class Recurring < Transaction
       self.recurs_on = build_recurrence_date(self.frequency, recurs_on_month, recurs_on_day)
     end
   end
-  # validates_presence_of :note, message: 'Must provide a name for this bill'
 
   def build_recurrence_date(frequency, month, day)
     recurs_on = nil
@@ -152,8 +138,6 @@ class Recurring < Transaction
   def due?
     next_billing_date <= zero(Time.now)
   end
-
-  alias_method :applicable?, :due?
 
   def commit
     return false if !active? || !due?
