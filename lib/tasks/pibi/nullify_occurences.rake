@@ -1,6 +1,6 @@
 namespace :pibi do
-  desc "Nullifies the hours, minutes, and seconds of Transaction occurences"
-  task :fix_occurence_resolution => :environment do
+  desc "Nullifies the hours, minutes, and seconds of Transaction occurrences"
+  task :fix_occurrence_resolution => :environment do
     transies = Transaction.all({ :type.not => Recurring }).select { |tx|
       tx.occured_on.hour != 0 ||
       tx.occured_on.minute != 0 ||
@@ -11,7 +11,7 @@ namespace :pibi do
     nr_fixed = 0
 
     transies.each do |tx|
-      if tx.update({ occured_on: tx.enforce_occurence_resolution })
+      if tx.update({ occured_on: tx.enforce_occurrence_resolution })
         nr_fixed += 1
       else
         puts "From #{tx.occured_on} to #{fixed}"

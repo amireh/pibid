@@ -20,12 +20,9 @@ gem "dm-mysql-adapter", ">=1.2.0"
 gem 'multi_json'
 gem 'addressable'
 gem 'uuid'
-gem 'timetastic', :git => 'https://github.com/amireh/timetastic'
-# gem 'timetastic', :path => "/home/kandie/Workspace/Projects/timetastic"
 gem 'omniauth', '~>1.1.4'
 gem 'omniauth-facebook'
 gem 'omniauth-github'
-# gem 'omniauth-twitter', '0.0.9'
 gem 'omniauth-google-oauth2'
 gem 'rabl'
 gem 'yajl-ruby'
@@ -37,6 +34,11 @@ gem 'google_currency', '=2.2.0'
 gem 'eventmachine'
 gem 'moneta', :require => 'rack/session/moneta'
 gem 'amqp'
+gem 'activesupport', '=3.2.11', :require => [
+  'active_support',
+  'active_support/time'
+]
+gem 'ice_cube', '=0.10.1'
 
 group :development do
   gem 'thin'

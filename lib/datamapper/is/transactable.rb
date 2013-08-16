@@ -20,7 +20,6 @@ module DataMapper
       module InstanceMethods
         def latest_transactions(q = {}, t = nil)
           transactions_in(nil, q)
-          # transactions.all({ :occured_on.gte => Timetastic.this.month, :occured_on.lt => Timetastic.next.month }.merge(q))
         end
 
         # def deposits(q = {})
@@ -54,15 +53,10 @@ module DataMapper
           # => daily_transactions(d,q)
           domain = PeriodToDomainMap[period].to_s
           define_method(:"#{period}_transactions") { |d = Time.now, q = {}|
-            transies = []
-            # is this thread-safe?
-            Timetastic.fixate(d) {
-              transies = transactions_in({
-                :begin => Timetastic.this.send(domain),
-                :end => Timetastic.next.send(domain)
-              }, q)
-            }
-            transies
+            transactions_in({
+              :begin => 0.send(domain).ago(d).send("beginning_of_#{domain}"),
+              :end   => 1.send(domain).from_now(d)
+            }, q)
           }
 
           [ Deposit, Withdrawal ].each do |tx_type|
@@ -114,8 +108,8 @@ module DataMapper
 
         def transactions_in(range = {}, q = {})
           range ||= {
-            :begin => Timetastic.this.month,
-            :end => Timetastic.next.month
+            :begin  => 0.months.ago.beginning_of_month,
+            :end    => 1.months.from_now.beginning_of_month
           }
 
           f = {

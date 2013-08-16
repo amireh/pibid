@@ -93,8 +93,8 @@ class Recurring < Transaction
         errors.add :recurs_on, "Bad recurrence day or month [#{day}, #{month}]"
         throw :halt
       end
-    else
-      recurs_on = DateTime.new(this_year, 1, day)
+    when :daily
+      recurs_on = DateTime.new(this_year, 1, 1)
     end
 
     recurs_on
@@ -104,96 +104,61 @@ class Recurring < Transaction
     amount * (flow_type == :negative ? -1 : 1) + y
   end
 
-  # The anchor on which the next billing date should be based.
+  # The time anchor on which the next commit should be based on.
   #
   # If the recurring has been committed at least once (last_commit is valid)
   # then the anchor is set to the last commit date, otherwise the anchor
-  # is based on the frequency type:
-  #
-  # * daily: the anchor is set to 1 day ahead of the creation time
-  # * monthly: the anchor is set to 1 month ahead of the creation time, taking
-  #   into account the day of recurrence
-  # * yearly: the anchor is set to 1 year ahead of the creation time, taking
-  #   into account both the day and month of recurrence
+  # is the date of the recurring's creation.
   #
   # @return Time object
-  def commit_anchor(lc = last_commit)
-    if lc then
-      # puts "Last commit @ #{lc.strftime('%D')}"
-      return Timetastic.zero lc.to_time
-    end
+  def commit_anchor
+    zero( (last_commit || created_at).to_time )
+  end
 
-    anchor = case frequency
-    when :daily
-      Timetastic.zero created_at.to_time
-    when :monthly
-      Timetastic.zero Time.new(created_at.year, created_at.month, recurs_on.day)
+  def schedule
+    s = IceCube::Schedule.new( commit_anchor )
+
+    r = case frequency
     when :yearly
-      Timetastic.zero Time.new(created_at.year, recurs_on.month, recurs_on.day)
+      IceCube::Rule.yearly.month_of_year(recurs_on.month).day_of_month(recurs_on.day)
+    when :monthly
+      IceCube::Rule.monthly.day_of_month(recurs_on.day)
+    when :daily
+      IceCube::Rule.daily
+    end
+
+    s.add_recurrence_rule(r)
+    s
+  end
+
+  def next_billing_date
+    zero( schedule.next_occurrence(commit_anchor) )
+  end
+
+  def all_occurrences(_until = Time.now)
+    schedule.occurrences_between( commit_anchor+1, zero(_until) )
+  end
+
+  def zero(*args)
+    if args.length == 1
+      Time.new(args[0].year, args[0].month, args[0].day)
+    elsif args.length == 3
+      Time.new(*args)
+    else
+      Time.new(args[0], args[1], args[2], 0, 0, 0)
     end
   end
 
-  def next_billing_date(anchor = nil, relative_to = nil)
-    ca = commit_anchor
-
-    if anchor && anchor.is_a?(Hash)
-      options     = anchor
-      anchor      = options[:anchor]
-      relative_to = options[:relative_to]
-    end
-
-    anchor      = Timetastic.zero(anchor || ca)
-    relative_to = Timetastic.zero(relative_to || Time.now)
-
-    offset = relative_to.to_i - anchor.to_i
-    interval = FrequencyIntervals[frequency]
-
-    # puts "Interval = #{interval}, offset = #{offset}"
-
-    if offset < 0 && offset.abs < interval
-      # puts "\tIt's this period, fixating to anchor"
-      return anchor
-    end
-
-    Timetastic.zero(1.send(FrequencyMethods[self.frequency]).ahead(anchor))
-  end
-
-  def all_occurences(_until = Time.now)
-    _until = Timetastic.zero _until
-
-    occurences = []
-    anchor = next_billing_date({
-      relative_to: Timetastic.zero(last_commit || created_at)
-    })
-
-    while anchor.to_i < _until.to_i
-      occurences << anchor
-      anchor = next_billing_date({ anchor: anchor, relative_to: anchor })
-    end
-
-    occurences
-  end
-
-  def due?(now = nil)
-    now ||= Time.now
-    now = now.to_time if now.respond_to?(:to_time) && !now.is_a?(Time)
-    now = Timetastic.zero(now)
-    nbd = next_billing_date({ relative_to: now })
-
-    # puts '' <<
-    #   "Due on: #{nbd.strftime('%D')}, now is: #{now.strftime('%D')}" <<
-    #   ", last commit was at: #{last_commit && last_commit.strftime('%D')}"
-
-    nbd.to_i <= now.to_i
+  def due?
+    next_billing_date <= zero(Time.now)
   end
 
   alias_method :applicable?, :due?
 
-  def commit(occurence = next_billing_date)
-    occurence = Timetastic.zero(occurence)
+  def commit
+    return false if !active? || !due?
 
-    return false unless self.active
-    return false if !due?(occurence)
+    occurrence = next_billing_date
 
     c = nil
 
@@ -209,7 +174,7 @@ class Recurring < Transaction
       currency: self.currency,
       note: self.note,
       payment_method: self.payment_method,
-      occured_on: occurence,
+      occured_on: occurrence,
       categories: self.categories,
       recurring: self
     })
@@ -219,12 +184,16 @@ class Recurring < Transaction
     end
 
     # stamp the commit
-    self.update!({ last_commit: occurence })
+    self.update!({ last_commit: occurrence })
 
     t
   end
 
   def committed_before?
     !!last_commit
+  end
+
+  def active?
+    self.active
   end
 end
