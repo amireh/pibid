@@ -4,7 +4,8 @@ module Sinatra
   module API
     module Helpers
       def api_call?
-        (request.accept || '').to_s.include?('json')
+        (request.accept || '').to_s.include?('json') ||
+        (request.content_type||'').to_s.include?('json')
       end
 
       # Define the required API arguments map. Any item defined
