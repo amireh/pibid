@@ -10,7 +10,7 @@ configure do |app|
     Dir.glob("#{d}/**/*.rb").each { |f| require f }
   }
 
-  User.default_categories = settings.user['default_categories']
+  User.default_categories = settings.default_categories
 
   # puts "User categories: #{User.default_categories}"
 

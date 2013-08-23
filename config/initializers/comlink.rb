@@ -3,9 +3,13 @@ helpers do
     settings.comlink
   end
 
-  # def notify(*args)
-  #   comlink.notify(args)
-  # end
+  def append_user_to_message(payload, user = @user)
+    if payload[:client_id] && !payload[:user] && user
+      payload.merge!({
+        user: JSON.parse(rabl(:"users/show.min", object: user))
+      })
+    end
+  end
 end
 
 configure do |app|
