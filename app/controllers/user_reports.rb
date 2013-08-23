@@ -1,24 +1,22 @@
-class UserReportsController
-  include Sinatra::Controller
+post '/users/:user_id/reports',
+  provides: [ :json ],
+  requires: [ :user ],
+  auth: [ :user ] do
 
-  scope :user
-  # endpoint '/users/:user_id'
+  api_required!({
+    segment: nil
+  })
 
-  configure :show, {
-    :requires => [ :user ]
-  }
+  puts session.id
+  puts session.options[:id]
 
-  def show
+  settings.comlink.broadcast(:jobs, {
+    id: "generate_report",
+    client: @user.id,
+    token: session.id
+  })
+
+  respond_to do |f|
+    f.json { '{}' }
   end
-
-  def index
-  end
-
-  def destroy
-  end
-
-  get '/:foobar' do
-  end
-
-  register!
 end

@@ -39,6 +39,9 @@ gem 'activesupport', '=3.2.11', :require => [
   'active_support/time'
 ]
 gem 'ice_cube', '=0.10.1'
+gem 'pibi',
+  :git => 'https://amireh@github.com/amireh/pibi.rb.git',
+  :branch => 'master'
 
 group :development do
   gem 'thin'
