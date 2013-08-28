@@ -33,6 +33,15 @@ RSpec.configure do |config|
     app.settings
   end
 
+  def comlink
+    o = Object.new
+    def o.queue(*args)
+    end
+    def o.push(*args)
+    end
+    o
+  end
+
   # use this for stubbing methods to be used in the instance scope
   # @example usage
   #   app_instance.stub(:puts)

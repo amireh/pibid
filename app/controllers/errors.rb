@@ -71,7 +71,7 @@ error 500..503 do
       details: { sinatra_error: request.env['sinatra.error'] }
     })
   rescue Exception => e
-    raise e if DEBUG
+    raise e if ENV['DEBUG']
   end
 
   errbody = request.env['sinatra.error'] || response.body || 'Internal error'

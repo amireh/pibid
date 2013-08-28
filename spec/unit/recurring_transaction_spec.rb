@@ -260,32 +260,32 @@ describe "Recurring Transactions" do
       end
 
       scenario 'a month past' do
-        t.update!({ created_at: Time.new(2013, 6, 12) })
+        t.update!({ created_at: Time.utc(2013, 6, 12) })
         t.next_billing_date.should == zero(2014, 5, 12)
       end
 
       scenario 'several months before' do
-        t.update!({ created_at: Time.new(2013, 2, 12) })
+        t.update!({ created_at: Time.utc(2013, 2, 12) })
         t.next_billing_date.should == zero(2013, 5, 12)
       end
 
       scenario 'same year, same month, same day' do
-        t.update!({ created_at: Time.new(2013, 5, 12) })
+        t.update!({ created_at: Time.utc(2013, 5, 12) })
         t.next_billing_date.should == zero(2014, 5, 12)
       end
 
       scenario 'same month, several days before' do
-        t.update!({ created_at: Time.new(2013, 5, 7) })
+        t.update!({ created_at: Time.utc(2013, 5, 7) })
         t.next_billing_date.should == zero(2013, 5, 12)
       end
 
       scenario 'same month, one day past' do
-        t.update!({ created_at: Time.new(2012, 5, 13) })
+        t.update!({ created_at: Time.utc(2012, 5, 13) })
         t.next_billing_date.should == zero(2013, 5, 12)
       end
 
       scenario 'same month, same day, different year' do
-        t.update!({ created_at: Time.new(2012, 5, 12) })
+        t.update!({ created_at: Time.utc(2012, 5, 12) })
         t.next_billing_date.should == zero(2013, 5, 12)
       end
     end
@@ -301,23 +301,23 @@ describe "Recurring Transactions" do
       end
 
       scenario 'same month, a few days before' do
-        t.update!({ created_at: Time.new(2013, 6, 1) })
-        t.next_billing_date.should == Time.new(2013, 6, 3)
+        t.update!({ created_at: Time.utc(2013, 6, 1) })
+        t.next_billing_date.should == Time.utc(2013, 6, 3)
       end
 
       scenario 'same month, same day' do
-        t.update!({ created_at: Time.new(2013, 6, 3) })
-        t.next_billing_date.should == Time.new(2013, 7, 3)
+        t.update!({ created_at: Time.utc(2013, 6, 3) })
+        t.next_billing_date.should == Time.utc(2013, 7, 3)
       end
 
       scenario 'same month, a few days past' do
-        t.update!({ created_at: Time.new(2013, 6, 4) })
-        t.next_billing_date.should == Time.new(2013, 7, 3)
+        t.update!({ created_at: Time.utc(2013, 6, 4) })
+        t.next_billing_date.should == Time.utc(2013, 7, 3)
       end
 
       scenario 'last month of year' do
-        t.update!({ created_at: Time.new(2013, 12, 4) })
-        t.next_billing_date.should == Time.new(2014, 1, 3)
+        t.update!({ created_at: Time.utc(2013, 12, 4) })
+        t.next_billing_date.should == Time.utc(2014, 1, 3)
       end
     end
 
@@ -331,29 +331,29 @@ describe "Recurring Transactions" do
       end
 
       scenario 'start of month' do
-        t.update!({ created_at: Time.new(2013, 6, 1) })
-        t.next_billing_date.should == Time.new(2013, 6, 2)
+        t.update!({ created_at: Time.utc(2013, 6, 1) })
+        t.next_billing_date.should == Time.utc(2013, 6, 2)
       end
 
       scenario 'end of month' do
-        t.update!({ created_at: Time.new(2013, 6, 30) })
-        t.next_billing_date.should == Time.new(2013, 7, 1)
+        t.update!({ created_at: Time.utc(2013, 6, 30) })
+        t.next_billing_date.should == Time.utc(2013, 7, 1)
       end
 
       # June has 30 days, should wrap
       scenario 'wraps at end of month' do
-        t.update!({ created_at: Time.new(2013, 6, 31) })
-        t.next_billing_date.should == Time.new(2013, 7, 2)
+        t.update!({ created_at: Time.utc(2013, 6, 31) })
+        t.next_billing_date.should == Time.utc(2013, 7, 2)
       end
 
       scenario 'start of year' do
-        t.update!({ created_at: Time.new(2013, 1, 1) })
-        t.next_billing_date.should == Time.new(2013, 1, 2)
+        t.update!({ created_at: Time.utc(2013, 1, 1) })
+        t.next_billing_date.should == Time.utc(2013, 1, 2)
       end
 
       scenario 'end of year' do
-        t.update!({ created_at: Time.new(2013, 12, 31) })
-        t.next_billing_date.should == Time.new(2014, 1, 1)
+        t.update!({ created_at: Time.utc(2013, 12, 31) })
+        t.next_billing_date.should == Time.utc(2014, 1, 1)
       end
     end
   end

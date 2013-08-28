@@ -3,7 +3,7 @@ class BugSubmission
 
   property    :id,       Serial
   property    :details,  Text, default: '{}', length: 2**24-1 # 16 MBytes (MySQL MEDIUMTEXT)
-  property    :filed_at, DateTime, default: lambda { |*_| DateTime.now }
+  property    :filed_at, DateTime, default: lambda { |*_| DateTime.now.utc }
 
   belongs_to  :user, required: false
 end

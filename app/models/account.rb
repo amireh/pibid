@@ -13,7 +13,7 @@ class Account
   # is updated
   property :currency,     String, default: "USD"
 
-  property :created_at,   DateTime, default: lambda { |*_| DateTime.now }
+  property :created_at,   DateTime, default: lambda { |*_| DateTime.now.utc }
 
   belongs_to :user, required: true
   has n, :transactions, :constraint => :destroy

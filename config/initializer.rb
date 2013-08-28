@@ -23,6 +23,6 @@ configure do |app|
 end
 
 configure :production, :development do
-  require "config/initializers/cors"
   require "config/initializers/comlink"
+  require "config/initializers/cors"
 end

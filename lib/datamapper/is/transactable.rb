@@ -52,24 +52,25 @@ module DataMapper
           # => monthly_transactions(d,q)
           # => daily_transactions(d,q)
           domain = PeriodToDomainMap[period].to_s
-          define_method(:"#{period}_transactions") { |d = Time.now, q = {}|
+          define_method(:"#{period}_transactions") { |d = Time.now.utc, q = {}|
+            begin_date = 0.send(domain).ago(d).send("beginning_of_#{domain}")
             transactions_in({
-              :begin => 0.send(domain).ago(d).send("beginning_of_#{domain}"),
-              :end   => 1.send(domain).from_now(d)
+              :begin => begin_date,
+              :end   => 1.send(domain).from_now(begin_date)
             }, q)
           }
 
           [ Deposit, Withdrawal ].each do |tx_type|
             plural_type = DataMapper::Inflector.pluralize(tx_type.name.to_s).downcase
-            define_method(:"#{period}_#{plural_type}") { |d = Time.now, q = {}|
+            define_method(:"#{period}_#{plural_type}") { |d = Time.now.utc, q = {}|
               self.send(:"#{period}_transactions", d, q.merge({ :type.not => nil, :type => tx_type }))
             }
           end
 
-          define_method(:"#{period}_spendings") { |d = Time.now, q = {}|
+          define_method(:"#{period}_spendings") { |d = Time.now.utc, q = {}|
             balance_for(self.send(:"#{period}_withdrawals", d, q))
           }
-          define_method(:"#{period}_earnings") { |d = Time.now, q = {}|
+          define_method(:"#{period}_earnings") { |d = Time.now.utc, q = {}|
             balance_for(self.send(:"#{period}_deposits", d, q))
           }
 
@@ -89,7 +90,7 @@ module DataMapper
           # calculate the balance for that.
           #
           # So, you can get the yearly balance in two ways:
-          # => yearly_balance(Time.new(2012, 1, 1))
+          # => yearly_balance(Time.utc(2012, 1, 1))
           # => yearly_balance(my_yearly_transies)
           define_method(:"#{period}_balance") { |in_c, q = {}|
             c = []
@@ -107,10 +108,14 @@ module DataMapper
         }
 
         def transactions_in(range = {}, q = {})
-          range ||= {
-            :begin  => 0.months.ago.beginning_of_month,
-            :end    => 1.months.from_now.beginning_of_month
-          }
+          unless range
+            begin_date = 0.months.ago.beginning_of_month
+            end_date = 1.months.from_now(begin_date)
+            range = {
+              :begin => begin_date,
+              :end => end_date
+            }
+          end
 
           f = {
             :occured_on.gte => range[:begin],

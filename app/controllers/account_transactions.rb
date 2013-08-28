@@ -15,7 +15,7 @@ helpers do
       when :daily
       end
 
-      current_account.send("#{type}_transactions", Time.new(y, m, d))
+      current_account.send("#{type}_transactions", Time.utc(y, m, d))
     rescue ArgumentError => e
       halt 400, "Invalid drilldown segment [YYYY/MM/DD]: '#{y}/#{m}/#{d}'"
     end
@@ -45,15 +45,15 @@ helpers do
   end
 
   def account_transactions_build(transaction, account, p = params)
-    user    = account.user
+    user = account.user
+
+    parsed_occurence = nil
 
     api_optional!({
       note:       nil,
       occured_on: lambda { |d|
-        begin
-          d.pibi_to_datetime(false)
-        rescue
-          return 'Invalid date, expected String format: MM/DD/YYYY, or epoch integer timestamp'
+        unless parsed_occurence = parse_date(d)
+          return 'Invalid date, expected String format: MM/DD/YYYY'
         end
       },
       currency:   nil,
@@ -62,7 +62,9 @@ helpers do
     }, p)
 
     api_transform! :amount do |a| a.to_f.round(2).to_s end
-    api_transform! :occured_on do |d| d.pibi_to_datetime end
+    api_transform! :occured_on do |d|
+      parsed_occurence
+    end
 
     pm = api_consume! :payment_method_id do |pm_id|
       user.payment_methods.get(pm_id) || user.payment_method

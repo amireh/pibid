@@ -22,10 +22,11 @@ class Transaction
   # Transactions can be either deposits, withdrawals, or recurrings
   property :type, Discriminator
 
-  property :occured_on,   DateTime, default: lambda { |*_|
-    now = DateTime.now; DateTime.new(now.year, now.month, now.day)
+  property :occured_on, DateTime, default: lambda { |*_|
+    now = DateTime.now.utc;
+    DateTime.new(now.year, now.month, now.day).utc
   }
-  property :created_at,   DateTime, default: lambda { |*_| DateTime.now }
+  property :created_at, DateTime, default: lambda { |*_| DateTime.now.utc }
 
   belongs_to :account, required: true
   belongs_to :payment_method, required: false, default: lambda { |tx,*_| tx.account.user.payment_method }
@@ -63,8 +64,8 @@ class Transaction
   end
 
   def enforce_occurrence_resolution(dt = self.occured_on)
-    dt ||= DateTime.now
-    return DateTime.new(dt.year, dt.month, dt.day, 0, 0, 0)
+    dt ||= Time.now.utc
+    Time.utc(dt.year, dt.month, dt.day, 0, 0, 0)
   end
 
   def occured_on=(dt)

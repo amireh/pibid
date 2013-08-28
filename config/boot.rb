@@ -8,6 +8,9 @@ require 'bundler/setup'
 
 Bundler.require(:default)
 
+ENV['TZ'] = 'UTC'
+Time.zone = 'UTC'
+
 # ----
 # Validating that configuration files exist and are readable...
 config_files = [ 'application', 'database', 'cookies', 'cors', 'amqp', 'oauth' ]

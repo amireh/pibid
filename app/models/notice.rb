@@ -5,7 +5,7 @@ class Notice
   property    :id,          Serial
   property    :salt,        String, length: 255
   property    :data,        String, length: 255
-  property    :created_at,  DateTime, default: lambda { |*_| DateTime.now }
+  property    :created_at,  DateTime, default: lambda { |*_| DateTime.now.utc }
   property    :accepted_at, DateTime
   property    :type,        String, length: 255
   property    :status,      Enum[ :pending, :expired, :accepted ], default: :pending
@@ -30,7 +30,7 @@ class Notice
   end
 
   def accept!
-    update({ status: :accepted, accepted_at: DateTime.now })
+    update({ status: :accepted, accepted_at: DateTime.now.utc })
     user.on_notice_accepted(self)
   end
 
