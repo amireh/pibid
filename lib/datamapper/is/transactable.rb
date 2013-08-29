@@ -18,10 +18,6 @@ module DataMapper
       end
 
       module InstanceMethods
-        def latest_transactions(q = {}, t = nil)
-          transactions_in(nil, q)
-        end
-
         # def deposits(q = {})
         #   self.transactions({ type: Deposit }.merge(q))
         # end
@@ -107,26 +103,21 @@ module DataMapper
           }
         }
 
-        def transactions_in(range = {}, q = {})
-          unless range
-            begin_date = 0.months.ago.beginning_of_month
-            end_date = 1.months.from_now(begin_date)
-            range = {
-              :begin => begin_date,
-              :end => end_date
-            }
-          end
-
+        def transactions_in(range, q = {})
           f = {
             :occured_on.gte => range[:begin],
             :occured_on.lt => range[:end]
           }
 
           unless q[:type]
-            f.merge!({:type.not => Recurring})
+            f.merge!({ :type.not => Recurring })
           end
 
-          transactions.all(f.merge(q))
+          f.merge!(q)
+
+          puts 'looking up transactions with query: ' + f.inspect if ENV['DEBUG']
+
+          transactions.all(f)
         end
 
         def balance_for(collection)
