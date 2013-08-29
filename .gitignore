@@ -10,3 +10,7 @@ config/oauth.yml
 dumps
 *.tar.bz2
 *.tar.gz
+.bundle
+tmp/*
+!tmp/.gitkeep
+bin

@@ -1,3 +1,3 @@
-module Pibi
-  VERSION = '2.2.0'
+module PibiAPI
+  VERSION = '2.3.0'
 end

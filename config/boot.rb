@@ -1,6 +1,6 @@
 # encoding: UTF-8
 
-$ROOT ||= File.join( File.dirname(__FILE__), '..' )
+$ROOT ||= File.expand_path( File.join( File.dirname(__FILE__), '..' ) )
 $LOAD_PATH << $ROOT
 
 require 'rubygems'
