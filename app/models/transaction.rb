@@ -17,7 +17,7 @@ class Transaction
   property :currency,       String, length: 3, default: lambda { |r,*_| r.account.currency }
   property :currency_rate,  Decimal, scale: 2, default: lambda { |r,*_| Currency[r.account.currency].rate }
 
-  property :note,         Text, default: ""
+  property :note, Text, default: "", lazy: false
 
   # Transactions can be either deposits, withdrawals, or recurrings
   property :type, Discriminator
