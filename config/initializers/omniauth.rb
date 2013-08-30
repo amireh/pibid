@@ -17,9 +17,5 @@ configure do |app|
       app.oauth['google']['key'],
       app.oauth['google']['secret'],
       { access_type: "offline", approval_prompt: "" }
-
-    provider :github,
-      app.oauth['github']['key'],
-      app.oauth['github']['secret']
   end
 end
