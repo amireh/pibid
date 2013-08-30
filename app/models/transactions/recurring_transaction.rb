@@ -9,7 +9,7 @@ class Recurring < Transaction
 
   property :flow_type,  Enum[ :positive, :negative ],      default: :positive
   property :frequency,  Enum[ :daily, :monthly, :yearly ], default: :monthly
-  property :recurs_on,  DateTime, default: lambda { |*_| DateTime.now }
+  property :recurs_on,  DateTime, default: lambda { |*_| DateTime.now.utc }
   property :last_commit, DateTime, allow_nil: true
   property :active,     Boolean, default: true
 
@@ -38,7 +38,7 @@ class Recurring < Transaction
 
   def build_recurrence_date(frequency, month, day)
     recurs_on = nil
-    this_year = Time.now.year
+    this_year = Time.now.utc.year
 
     frequency = frequency.to_sym
     month ||= 0
@@ -65,7 +65,7 @@ class Recurring < Transaction
     when :monthly
       # only the day is used in this case
       begin
-        recurs_on = DateTime.new(this_year, 1, day)
+        recurs_on = Time.utc(this_year, 1, day)
       rescue
         errors.add :recurs_on, "Bad recurrence day: [#{day}]"
         throw :halt
@@ -74,13 +74,13 @@ class Recurring < Transaction
     when :yearly
       # the day and month are used in this case
       begin
-        recurs_on = DateTime.new(this_year, month, day)
+        recurs_on = Time.utc(this_year, month, day)
       rescue
         errors.add :recurs_on, "Bad recurrence day or month [#{day}, #{month}]"
         throw :halt
       end
     when :daily
-      recurs_on = DateTime.new(this_year, 1, 1)
+      recurs_on = Time.utc(this_year, 1, 1)
     end
 
     recurs_on
@@ -121,22 +121,22 @@ class Recurring < Transaction
     zero( schedule.next_occurrence(commit_anchor) )
   end
 
-  def all_occurrences(_until = Time.now)
+  def all_occurrences(_until = Time.now.utc)
     schedule.occurrences_between( commit_anchor+1, zero(_until) )
   end
 
   def zero(*args)
     if args.length == 1
-      Time.new(args[0].year, args[0].month, args[0].day)
+      Time.utc(args[0].year, args[0].month, args[0].day)
     elsif args.length == 3
-      Time.new(*args)
+      Time.utc(*args)
     else
-      Time.new(args[0], args[1], args[2], 0, 0, 0)
+      Time.utc(args[0], args[1], args[2], 0, 0, 0)
     end
   end
 
   def due?
-    next_billing_date <= zero(Time.now)
+    next_billing_date <= zero(Time.now.utc)
   end
 
   def commit

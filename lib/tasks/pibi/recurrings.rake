@@ -43,11 +43,11 @@ namespace :pibi do
 
       corrupt.each do |tx|
         r = tx.recurs_on
-        year = r.year == 0 ? Time.now.year : r.year
+        year = r.year == 0 ? Time.now.utc.year : r.year
         month = r.month == 0 ? 1 : r.month
         day = r.day == 0 ? 1 : r.day
 
-        f = DateTime.new(year, month, day)
+        f = Time.utc(year, month, day)
 
         puts "New date: #{f}"
 

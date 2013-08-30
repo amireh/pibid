@@ -12,9 +12,10 @@ post '/users/:user_id/notices/:type',
 
   # was a notice already issued and another is requested?
   redispatch = api_param(:redispatch)
-
+  job_id = ''
   case type
   when "email"
+    job_id = 'confirm_account'
     if @user.email_verified?
       halt 400, 'Already verified.'
     end
@@ -32,6 +33,7 @@ post '/users/:user_id/notices/:type',
       halt 500, @user.errors
     end
   when "password"
+    job_id = 'reset_password'
     if redispatch || @user.notices.all({ type: 'password' }).empty?
       unless @n = @user.generate_temporary_password
         halt 500, @user.errors
@@ -44,16 +46,10 @@ post '/users/:user_id/notices/:type',
   @notice = @n
 
   if @n
-    settings.comlink.broadcast(:reports, {
-      id: "notices.#{type}",
+    comlink.queue('mails', job_id, {
       client_id: @user.id,
-      data: {
-        user: {
-          email: @user.email,
-          name:  @user.name
-        },
-        notice: JSON.parse(rabl(:"users/notices/show", object: @notice))
-      }
+      user: JSON.parse(rabl(:"users/show.min", object: @user)),
+      notice: JSON.parse(rabl(:"users/notices/show", object: @notice))
     })
   end
 
@@ -110,16 +106,10 @@ post '/users/reset_password', provides: [ :json ] do
     halt 500, @user.errors
   end
 
-  settings.comlink.broadcast(:reports, {
-    id: "notices.password",
+  comlink.queue('mails', "reset_password", {
     client_id: @user.id,
-    data: {
-      user: {
-        email: @user.email,
-        name:  @user.name
-      },
-      notice: JSON.parse(rabl(:"users/notices/show", object: @notice))
-    }
+    user: JSON.parse(rabl(:"users/show.min", object: @user)),
+    notice: JSON.parse(rabl(:"users/notices/show", object: @notice))
   })
 
   respond_to do |f|

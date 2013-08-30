@@ -18,21 +18,31 @@ post '/submissions/bugs', provides: [ :json ] do
   user = current_user || User.new({ email: "guest@pibiapp.com", name: "Guest" })
 
   bug_submission = BugSubmission.create({
-    details:  (params||{}).to_json,
-    user:     current_user
+    details: (params||{}).to_json,
+    user: current_user
   })
 
-  settings.comlink.broadcast(:reports, {
-    id: "submissions.bug",
-    data: {
-      id: bug_submission.id,
-      user: {
-        email: user.email,
-        name:  user.name
-      },
-      filed_at: bug_submission.filed_at,
-      details:  params||{}
-    }
+  # settings.comlink.broadcast(:reports, {
+  #   id: "submissions.bug",
+  #   data: {
+  #     id: bug_submission.id,
+  #     user: {
+  #       email: user.email,
+  #       name:  user.name
+  #     },
+  #     filed_at: bug_submission.filed_at,
+  #     details:  params||{}
+  #   }
+  # })
+  comlink.queue('mails', 'submit_bug', {
+    client_id: user.id,
+    submission_id: bug_submission.id,
+    submitted_by: {
+      name:  user.name,
+      email: user.email
+    },
+    submitted_at: bug_submission.filed_at,
+    details: params || {}
   })
 
   unless bug_submission.saved?

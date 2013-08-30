@@ -10,7 +10,7 @@ namespace :pibi do
       bank = Money.default_bank = Money::Bank::GoogleCurrency.new
       bank.flush_rates
 
-      puts "[pibi:currencies] retrieved, populating..."
+      puts "[pibi:currencies] #{Money::Currency.table.length} currencies retrieved, populating..."
       Currency.destroy
       Money::Currency.table.each { |centry|
         begin;
@@ -25,6 +25,8 @@ namespace :pibi do
             symbol: symbol
           })
 
+          puts "Currency: #{c.name} => #{c.rate}"
+
         rescue Money::Bank::UnknownRate => e;
         end
       }
@@ -38,7 +40,16 @@ namespace :pibi do
       bank = Money.default_bank = Money::Bank::GoogleCurrency.new
       bank.flush_rates
 
-      puts "[pibi:currencies] retrieved, updating..."
+      puts "[pibi:currencies] #{Money::Currency.table.length} currencies retrieved, updating..."
+      Money::Currency.table.select { |entry| entry.to_s == 'USD' }.each { |centry|
+        iso     = centry[1][:iso_code]
+        symbol  = centry[1][:symbol]
+
+        Currency.first_or_create({ name: iso }, {
+          rate: 1.0
+        })
+      }
+
       Money::Currency.table.each { |centry|
         begin
           iso     = centry[1][:iso_code]
@@ -51,7 +62,11 @@ namespace :pibi do
             c.update!({ rate: (1 / rate).round(2) })
           end
 
+          puts "Currency: #{c.name} => #{c.rate}"
         rescue Money::Bank::UnknownRate => e;
+          puts "Error!"
+          puts "Currency entry: #{centry}"
+          puts "Exception: #{e.inspect}"
         end
       }
       puts "[pibi:currencies] #{Currency.count} currencies updated."

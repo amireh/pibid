@@ -1,4 +1,5 @@
 [config]
+config/*.yml
 config/amqp.yml
 config/cookies.yml
 config/cors.yml
@@ -10,3 +11,9 @@ config/oauth.yml
 dumps
 *.tar.bz2
 *.tar.gz
+.bundle
+log/*
+tmp/*
+!tmp/.gitkeep
+!log/.gitkeep
+bin

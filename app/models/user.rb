@@ -35,7 +35,7 @@ class User
   property :oauth_secret,   Text
   property :extra,          Text
   property :auto_password,  Boolean, default: false
-  property :created_at,     DateTime, default: lambda { |*_| DateTime.now }
+  property :created_at,     DateTime, default: lambda { |*_| DateTime.now.utc }
   # property :is_admin,       Boolean, default: false
   # property :is_public,      Boolean, default: false
 
@@ -92,7 +92,7 @@ class User
   end
 
   def account
-    self.accounts.first
+    self.accounts.first || self.accounts.create
   end
 
   def create_default_pm()

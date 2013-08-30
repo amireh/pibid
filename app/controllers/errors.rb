@@ -55,19 +55,23 @@ error 500..503 do
 
   begin
     bug_submission = BugSubmission.create({
-      details: { sinatra_error: request.env['sinatra.error'] }.to_json
+      details: {
+        sinatra_error: request.env['sinatra.error']
+      }.to_json
     })
 
-    settings.comlink.broadcast(:reports, {
-      id: "submissions.internal_error",
-      data: {
-        id: bug_submission.id,
-        filed_at: bug_submission.filed_at,
-        details:  { sinatra_error: request.env['sinatra.error'] }
-      }
+    comlink.queue('mails', 'submit_bug', {
+      client_id: 0,
+      submission_id: bug_submission.id,
+      submitted_by: {
+        name:  'pibid',
+        email: 'support@pibiapp.com'
+      },
+      submitted_at: bug_submission.filed_at,
+      details: { sinatra_error: request.env['sinatra.error'] }
     })
   rescue Exception => e
-    # raise e
+    raise e if ENV['DEBUG']
   end
 
   errbody = request.env['sinatra.error'] || response.body || 'Internal error'

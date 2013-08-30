@@ -10,7 +10,7 @@ configure do |app|
     Dir.glob("#{d}/**/*.rb").each { |f| require f }
   }
 
-  User.default_categories = settings.user['default_categories']
+  User.default_categories = settings.default_categories
 
   # puts "User categories: #{User.default_categories}"
 
@@ -23,6 +23,6 @@ configure do |app|
 end
 
 configure :production, :development do
-  require "config/initializers/cors"
   require "config/initializers/comlink"
+  require "config/initializers/cors"
 end

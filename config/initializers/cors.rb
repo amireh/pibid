@@ -1,6 +1,10 @@
 configure do
   enable :cross_origin
 
+  unless settings.respond_to?(:expose_headers)
+    set :expose_headers, nil
+  end
+
   allowed_origin = settings.cors['allowed_origin']||''
   allowed_origin = :any if allowed_origin.empty?
 

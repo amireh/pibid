@@ -1,18 +1,23 @@
 require 'addressable/uri'
 
 helpers do
-  def accept_params(attrs, resource)
-    raise ArgumentError.new 'No such resource.' if !resource
-
-    p = {}
-    attrs.each { |a|
-      p[a.to_sym] = params.has_key?(a.to_s) ? params[a] : resource.attribute_get(a)
-    }
-    p
-  end
-
   def is_email?(s)
     (s =~ /^[a-zA-Z][\w\.-]*[a-zA-Z0-9]@[a-zA-Z0-9][\w\.-]*[a-zA-Z0-9]\.[a-zA-Z][a-zA-Z\.]*[a-zA-Z]$/u) != nil
+  end
+
+  # expected format: "MM/DD/YYYY"
+  def parse_date(date_string)
+    unless date_string =~ /(\d{1,2})\/(\d{1,2})\/(\d{4,})/
+      return false
+    end
+
+    m, d, y = $1, $2, $3
+
+    begin
+      Time.utc(y, m, d)
+    rescue ArgumentError => e
+      return false
+    end
   end
 end
 
@@ -62,39 +67,5 @@ class String
 
   def sanitize
     Addressable::URI.parse(self.downcase.gsub(/[[:^word:]]/u,'-').squeeze('-').chomp('-')).normalized_path
-  end
-
-  # expected format: "MM/DD/YYYY"
-  def pibi_to_datetime(graceful = true)
-    m,d,y = self.split(/\/|\-/)
-    begin
-      DateTime.new(y.to_i,m.to_i,d.to_i)
-    rescue ArgumentError => e
-      raise e unless graceful
-      DateTime.now
-    end
-  end
-end
-
-class Fixnum
-  def pibi_to_datetime(graceful = true)
-    begin
-      Time.at(self).to_datetime
-    rescue RuntimeError => e
-      raise e unless graceful
-      DateTime.now
-    end
-  end
-end
-
-class Object
-  def pibi_to_datetime(*args)
-    if self.is_a?(String) || self.is_a?(Fixnum)
-      super(*args)
-    elsif self.is_a?(Float)
-      self.to_i.pibi_to_datetime(*args)
-    else
-      self.to_s.pibi_to_datetime(*args)
-    end
   end
 end

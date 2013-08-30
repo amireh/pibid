@@ -60,15 +60,12 @@ post '/users/:user_id/journal',
     }
   }
 
-  @journal.data = rabl(:"users/broadcast_journal")
+  @journal.data = rabl(:"users/journals/show.min")
 
   if @journal.save
-    settings.comlink.broadcast(:sync, {
-      id: "journals.sync",
+    comlink.push('journals', 'sync', {
       client_id: @user.id,
-      data: {
-        id: @journal.id
-      }
+      journal_id: @journal.id
     })
   end
 
@@ -76,7 +73,7 @@ post '/users/:user_id/journal',
 
   respond_with @journal do |f|
     f.json {
-      rabl(:"users/journal")
+      rabl(:"users/journals/show")
     }
   end
 end
