@@ -1,15 +1,11 @@
 module Sinatra
   module SessionsHelper
-    Messages = {
-      lacks_privilege: "You lack privilege to visit this section.",
-      unauthorized:    "You must sign in first"
-    }
-
     def logged_in?
       @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+
       if @auth.provided? && @auth.basic? && @auth.credentials
         if u = authenticate(@auth.credentials.first, @auth.credentials.last)
-          authorize(u)
+          return authorize(u)
         end
       end
 
@@ -17,22 +13,18 @@ module Sinatra
     end
 
     def restricted!(scope = nil)
-      halt 401, Messages[:unauthorized] unless logged_in?
+      halt 401, "You must sign in first" unless logged_in?
     end
 
     def restrict_to(roles, options = {})
       roles = [ roles ] if roles.is_a? Symbol
 
-      if roles.include?(:guest)
-        if logged_in?
+      if logged_in?
+        if roles.include?(:guest)
           halt 403, 'Already logged in.'
         end
 
         return true
-      end
-
-      if roles.include? :user || roles.include?(:admin)
-        restricted!
       end
     end
 
@@ -59,8 +51,8 @@ module Sinatra
     def authenticate(email, pw, encrypt = true)
       User.first({
         email:    email,
-        provider: 'pibi',
-        password: encrypt ? User.encrypt(pw) : pw
+        password: encrypt ? User.encrypt(pw) : pw,
+        provider: 'pibi'
       })
     end
 
@@ -80,6 +72,8 @@ module Sinatra
       else
         session[:id] = user.id
       end
+
+      true
     end
 
   end

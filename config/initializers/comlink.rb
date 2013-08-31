@@ -13,16 +13,10 @@ helpers do
 end
 
 configure do |app|
-  set :comlink, Pibi::Producer.new(app.amqp)
+  puts ">> Launching AMQP Comlink..."
+  set :comlink, Pibi::AMQP::Producer.new(app.amqp, true)
 
-  EM.next_tick do
-    puts ">> Launching AMQP Comlink..."
-    app.comlink.start do
-      puts ">> Launched"
-    end
-
-    at_exit do
-      app.comlink.stop
-    end
+  at_exit do
+    app.comlink.stop
   end
 end
