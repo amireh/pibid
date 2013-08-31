@@ -6,12 +6,12 @@ GIT
 
 GIT
   remote: https://amireh@github.com/amireh/pibi.rb.git
-  revision: 62c8326262b7a8a5b3df66e6d26636c3cf44ea4f
+  revision: 580e698e3e63560bd8b05a546d656818d1a0b329
   branch: master
   specs:
-    pibi (0.2.1)
+    pibi (0.3.0)
       activesupport (>= 4.0.0)
-      amqp (~> 0.9.0)
+      bunny (>= 0.10.x)
       json
       uuid
 
@@ -46,19 +46,13 @@ GEM
       thread_safe (~> 0.1)
       tzinfo (~> 0.3.37)
     addressable (2.3.5)
-    amq-client (0.9.12)
-      amq-protocol (>= 1.2.0)
-      eventmachine
-    amq-protocol (1.2.0)
-    amqp (0.9.10)
-      amq-client (~> 0.9.12)
-      amq-protocol (~> 1.2.0)
-      eventmachine
+    amq-protocol (1.7.0)
     atomic (1.1.13)
     backports (3.3.3)
     bcrypt-ruby (3.1.2)
+    bunny (1.0.0.pre5)
+      amq-protocol (>= 1.7.0)
     cancan (1.6.10)
-    daemons (1.1.9)
     data_objects (0.10.13)
       addressable (~> 2.1)
     diff-lcs (1.2.4)
@@ -92,7 +86,6 @@ GEM
       dm-core (~> 1.2.0)
     do_mysql (0.10.13)
       data_objects (= 0.10.13)
-    eventmachine (1.0.3)
     faraday (0.8.8)
       multipart-post (~> 1.2.0)
     fastercsv (1.5.5)
@@ -107,6 +100,7 @@ GEM
     json_pure (1.8.0)
     jwt (0.1.8)
       multi_json (>= 1.5)
+    kgio (2.8.0)
     macaddr (1.6.1)
       systemu (~> 2.5.0)
     minitest (4.7.5)
@@ -140,6 +134,7 @@ GEM
       rack
     rack-test (0.6.2)
       rack (>= 1.0)
+    raindrops (0.11.0)
     rake (10.1.0)
     rspec (2.14.1)
       rspec-core (~> 2.14.0)
@@ -154,14 +149,14 @@ GEM
       sinatra (>= 1.0.0)
     stringex (1.5.1)
     systemu (2.5.2)
-    thin (1.5.1)
-      daemons (>= 1.0.9)
-      eventmachine (>= 0.12.6)
-      rack (>= 1.0.0)
     thread_safe (0.1.2)
       atomic
     tilt (1.4.1)
     tzinfo (0.3.37)
+    unicorn (4.6.3)
+      kgio (~> 2.6)
+      rack
+      raindrops (~> 0.7)
     uuid (2.3.7)
       macaddr (~> 1.0)
     uuidtools (2.1.4)
@@ -173,7 +168,6 @@ PLATFORMS
 DEPENDENCIES
   activesupport (>= 4.0.0)
   addressable
-  amqp
   dm-constraints (>= 1.2.0)
   dm-core (>= 1.2.0)
   dm-migrations (>= 1.2.0)
@@ -181,7 +175,6 @@ DEPENDENCIES
   dm-serializer (>= 1.2.0)
   dm-types (>= 1.2.0)
   dm-validations (>= 1.2.0)
-  eventmachine
   google_currency (= 2.2.0)
   ice_cube (= 0.10.1)
   json
@@ -201,7 +194,7 @@ DEPENDENCIES
   sinatra-can
   sinatra-contrib!
   sinatra-cross_origin!
-  thin
   tzinfo
+  unicorn
   uuid
   yajl-ruby

@@ -32,15 +32,15 @@ gem 'sinatra-cross_origin',
 gem 'sinatra-can', :require => "sinatra/can"
 gem 'money', '=5.1.1'
 gem 'google_currency', '=2.2.0'
-gem 'eventmachine'
 gem 'moneta', :require => 'rack/session/moneta'
-gem 'amqp'
 gem 'activesupport', '>= 4.0.0', :require => [
   'active_support',
   'active_support/time'
 ]
 gem 'ice_cube', '=0.10.1'
-gem 'thin'
+# gem 'thin'
+# gem 'puma'
+gem 'unicorn'
 gem 'pibi',
   :git => 'https://amireh@github.com/amireh/pibi.rb.git',
   :branch => 'master'
