@@ -58,7 +58,7 @@ namespace :pibi do
 
           next if rate <= 0.0
 
-          if c = Currency.first({ name: iso })
+          if c = Currency.first_or_create({ name: iso }, { rate: 1 })
             c.update!({ rate: (1 / rate).round(2) })
           end
 
