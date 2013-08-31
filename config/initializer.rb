@@ -12,8 +12,6 @@ configure do |app|
 
   User.default_categories = settings.default_categories
 
-  # puts "User categories: #{User.default_categories}"
-
   set :views, File.join($ROOT, 'app', 'views')
 
   require "config/initializers/datamapper"

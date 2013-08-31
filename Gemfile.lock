@@ -16,6 +16,13 @@ GIT
       uuid
 
 GIT
+  remote: https://github.com/rkh/rack-protection
+  revision: b23334332b0391920dfe1ed118b50da1b0afd544
+  specs:
+    rack-protection (1.5.0)
+      rack
+
+GIT
   remote: https://github.com/sinatra/sinatra
   revision: ccd6103d4c9c2238cd9d8b74176a24844eff328c
   specs:
@@ -130,8 +137,6 @@ GEM
     rabl (0.8.6)
       activesupport (>= 2.3.14)
     rack (1.5.2)
-    rack-protection (1.5.0)
-      rack
     rack-test (0.6.2)
       rack (>= 1.0)
     raindrops (0.11.0)
@@ -187,6 +192,7 @@ DEPENDENCIES
   omniauth-google-oauth2
   pibi!
   rabl
+  rack-protection!
   rake
   rspec
   rspec-core
