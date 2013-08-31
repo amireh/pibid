@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://amireh@github.com/amireh/pibi.rb.git
-  revision: 580e698e3e63560bd8b05a546d656818d1a0b329
+  revision: 8e90e070fcff7fe5812703ea291773a2be4ad754
   branch: master
   specs:
     pibi (0.3.0)

@@ -63,7 +63,7 @@ post '/users/:user_id/journal',
   @journal.data = rabl(:"users/journals/show.min")
 
   if @journal.save
-    comlink.push('journals', 'sync', {
+    comlink.push('notifications', 'journal_committed', {
       client_id: @user.id,
       journal_id: @journal.id
     })
