@@ -13,5 +13,4 @@ configure do
   def comlink.stop(*args)
     true
   end
-
 end

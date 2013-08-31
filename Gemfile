@@ -1,5 +1,7 @@
 source 'https://rubygems.org'
 
+gem 'rack-protection',
+  :git => 'https://github.com/rkh/rack-protection'
 gem 'sinatra', '>=1.4.0',
   :git => 'https://github.com/sinatra/sinatra'
 gem 'sinatra-contrib',
