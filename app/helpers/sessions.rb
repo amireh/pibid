@@ -5,7 +5,7 @@ module Sinatra
 
       if @auth.provided? && @auth.basic? && @auth.credentials
         if u = authenticate(@auth.credentials.first, @auth.credentials.last)
-          return authorize(u)
+          authorize(u)
         end
       end
 
@@ -26,6 +26,8 @@ module Sinatra
 
         return true
       end
+
+      restricted! if roles.include?(:user)
     end
 
     def current_user
@@ -72,8 +74,6 @@ module Sinatra
       else
         session[:id] = user.id
       end
-
-      true
     end
 
   end
