@@ -40,7 +40,6 @@ gem 'activesupport', '>= 4.0.0', :require => [
   'active_support/time'
 ]
 gem 'ice_cube', '=0.10.1'
-# gem 'thin'
 # gem 'puma'
 gem 'unicorn'
 gem 'pibi',
@@ -48,6 +47,7 @@ gem 'pibi',
   :branch => 'master'
 
 group :development do
+  gem 'thin'
   # gem 'rake'
 end
 
