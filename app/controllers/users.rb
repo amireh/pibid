@@ -144,7 +144,14 @@ helpers do
 end
 
 post '/users', auth: :guest, provides: [ :json ] do
-  @user = build_user_from_pibi
+  api_required!({
+    name: nil,
+    email: nil,
+    password: nil,
+    password_confirmation: nil
+  })
+
+  @user = build_user_from_pibi(api_params)
 
   unless @user.save
     halt 400, @user.errors
