@@ -1,0 +1,1 @@
+--output-dir doc/api --protected -m markdown -r README.md --plugin restful --title "Pibi API"

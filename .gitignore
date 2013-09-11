@@ -18,3 +18,6 @@ tmp/*
 !tmp/.gitkeep
 !log/.gitkeep
 bin
+coverage
+.yardoc
+doc/api

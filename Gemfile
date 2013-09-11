@@ -6,7 +6,7 @@ gem 'sinatra', '>=1.4.0',
   :git => 'https://github.com/sinatra/sinatra'
 gem 'sinatra-contrib',
   :git => 'https://github.com/sinatra/sinatra-contrib',
-  :require => [ 'sinatra/namespace', 'sinatra/config_file', 'sinatra/respond_with' ]
+  :require => [ 'sinatra/config_file', 'sinatra/respond_with' ]
 gem 'mysql'
 gem 'json'
 gem "dm-core", ">=1.2.0"
@@ -48,6 +48,9 @@ gem 'pibi',
 
 group :development do
   gem 'thin'
+  # gem 'yard'
+  # gem 'yard-restful'
+  gem 'bluecloth'
   # gem 'rake'
 end
 
@@ -55,7 +58,10 @@ group :test do
   gem 'rake'
   gem 'rspec'
   gem 'rspec-core'
+  gem 'simplecov', :require => false
 end
 
 gem "rake"
 gem 'tzinfo'
+gem 'eu_central_bank'
+gem 'money-open-exchange-rates'
