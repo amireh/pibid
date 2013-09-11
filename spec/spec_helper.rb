@@ -2,6 +2,9 @@ $LOAD_PATH << File.join(File.dirname(__FILE__), '..')
 
 ENV['RACK_ENV'] = 'test'
 
+require 'simplecov'
+SimpleCov.start
+
 require 'rspec'
 require 'rack/test'
 require 'rack/utils'
