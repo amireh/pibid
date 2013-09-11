@@ -55,12 +55,11 @@ group :development do
 end
 
 group :test do
-  gem 'rake'
   gem 'rspec'
   gem 'rspec-core'
   gem 'simplecov', :require => false
 end
 
 gem 'tzinfo'
-gem 'eu_central_bank'
 gem 'money-open-exchange-rates'
+gem 'rake'
