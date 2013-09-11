@@ -5,6 +5,8 @@
 
   post r, provides: [ :json ] do
     unless logged_in?
+      puts "logging in with #{params.inspect}" if ENV['DEBUG']
+
       api_required!({
         email: lambda { |v|
           if !v || v.to_s.empty? || !is_email?(v)
@@ -23,7 +25,7 @@
       unless u = authenticate(api_param(:email), api_param(:password))
         u = User.new
         u.errors.add :email, 'The email or password you entered were incorrect.'
-        halt 400, u.errors
+        halt 401, u.errors
       end
 
       authorize(u)
