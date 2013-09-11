@@ -1,6 +1,8 @@
 class Currency
   include DataMapper::Resource
 
+  default_scope(:default).update(:order => [ :name.asc ])
+
   property :id,     Serial
   property :name,   String, length: 3, unique: true
   property :rate,   Decimal, scale: 2, required: true
