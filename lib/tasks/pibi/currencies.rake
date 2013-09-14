@@ -54,6 +54,7 @@ namespace :pibi do
         symbol = iso_code
 
         # next if (1 / rate.to_f).round(2) <= 0.0
+        next if !rate
 
         # look up the symbol, if possible
         begin
@@ -88,6 +89,28 @@ namespace :pibi do
       # end
 
       puts "Currency exchange rates have updated, #{Currency.count} currencies available."
+    end
+
+    desc 'the number of currencies with invalid rate'
+    task :invalid => :environment do
+      puts Currency.all({ rate: 0 }).map(&:name)
+    end
+
+    desc 'remove invalid currencies'
+    task :remove_invalid => :environment do
+      Currency.all({ rate: 0 }).each do |c|
+        transies = Transaction.all({ currency: c.name })
+        transies.each do |tx|
+          tx.update({
+            currency: 'USD',
+            currency_rate: 1
+          })
+        end
+
+        puts "Adjusted #{transies.length} transactions to use USD instead of #{c.name}"
+      end
+
+      Currency.all({ rate: 0 }).destroy
     end
   end
 end
