@@ -5,6 +5,8 @@
 #     https://github.com/datamapper/dm-rails/blob/master/lib/dm-rails/railties/database.rake
 #
 
+ENV['RACK_ENV'] = 'production'
+
 require 'rake'
 
 # replace this with however your app configures DataMapper repositor(ies)

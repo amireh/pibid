@@ -44,3 +44,22 @@ patch '/users/:user_id/accounts/:account_id',
     }
   end
 end
+
+put '/users/:user_id/accounts/:account_id/purge',
+  auth: :user,
+  provides: [ :json ],
+  requires: [ :user, :account ] do
+
+  @account.transactions.destroy
+  @account.recurrings.destroy
+
+  @account = @account.refresh
+
+  halt 501 if @account.transactions.length > 0 || @account.recurrings.length > 0
+
+  respond_with @account do |f|
+    f.json {
+      rabl :"accounts/show"
+    }
+  end
+end

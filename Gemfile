@@ -63,3 +63,4 @@ end
 gem 'tzinfo'
 gem 'money-open-exchange-rates'
 gem 'rake'
+gem 'newrelic_rpm', :require => 'newrelic_rpm'

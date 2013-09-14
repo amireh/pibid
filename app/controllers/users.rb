@@ -129,6 +129,8 @@ helpers do
       preferences: nil
     }, p)
 
+    puts "updating user: #{api_params} (#{params})" if ENV['DEBUG']
+
     api_consume! :preferences do |prefs|
       user.update_preferences(prefs)
     end
@@ -200,6 +202,8 @@ delete '/users/:user_id',
   auth: :user,
   requires: [ :user ],
   provides: [ :json ] do
+
+  halt 403 if @user.demo?
 
   unless @user.destroy
     halt 400, @user.errors

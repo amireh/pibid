@@ -10,7 +10,7 @@
 
 # Use at least one worker per core if you're on a dedicated server,
 # more will usually help for _short_ waits on databases/caches.
-worker_processes 2
+worker_processes 4
 
 # Since Unicorn is never exposed to outside clients, it does not need to
 # run on the standard HTTP port (80), there is no reason to start Unicorn
@@ -32,17 +32,18 @@ listen "127.0.0.1:4000", :tcp_nopush => true
 timeout 30
 
 # feel free to point this anywhere accessible on the filesystem
-pid "/var/run/pibid.unicorn.pid"
+pid "/var/run/unicorn/pibid.pid"
 
 # By default, the Unicorn logger will write to stderr.
 # Additionally, ome applications/frameworks log to stderr or stdout,
 # so prevent them from going to /dev/null when daemonized here:
-stderr_path "/var/log/pibid.unicorn.stderr.log"
-stdout_path "/var/log/pibid.unicorn.stdout.log"
+stderr_path "/var/log/unicorn/pibid.stderr.log"
+stdout_path "/var/log/unicorn/pibid.stdout.log"
 
 # combine Ruby 2.0.0dev or REE with "preload_app true" for memory savings
 # http://rubyenterpriseedition.com/faq.html#adapt_apps_for_cow
-preload_app true
+preload_app false
+
 GC.respond_to?(:copy_on_write_friendly=) and
   GC.copy_on_write_friendly = true
 
@@ -56,6 +57,7 @@ check_client_connection false
 
 before_fork do |server, worker|
 	ENV['RACK_ENV'] = 'production'
+	ENV['TZ'] = 'UTC'
 
   # the following is highly recomended for Rails + "preload_app true"
   # as there's no need for the master process to hold a connection

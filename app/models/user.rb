@@ -126,6 +126,10 @@ class User
     end
   end
 
+  def demo?
+    name == "Pibi Demo"
+  end
+
   class << self
     # TODO: this needs to be changed
     def encrypt(pw)

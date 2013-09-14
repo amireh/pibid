@@ -13,7 +13,7 @@ Time.zone = 'UTC'
 
 # ----
 # Validating that configuration files exist and are readable...
-config_files = [ 'application', 'database', 'cookies', 'cors', 'amqp', 'oauth', 'oer' ]
+config_files = %w[application database cookies cors amqp oauth oer newrelic]
 config_files.each { |config_file|
   unless File.exists?(File.join($ROOT, 'config', "%s.yml" %[config_file] ))
     class ConfigFileError < StandardError; end;
@@ -23,6 +23,7 @@ config_files.each { |config_file|
 
 configure do
   require 'lib/version'
+
   puts "---- Pibi API #{Pibi::VERSION} ----"
   puts ">> Booting..."
 
