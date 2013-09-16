@@ -6,6 +6,7 @@ $LOAD_PATH << $ROOT
 require 'config/boot'
 require 'newrelic_rpm'
 require 'new_relic/rack/developer_mode'
+require 'rollbar'
 
 # NewRelic::Agent.after_fork(:force_reconnect => true)
 Thread.abort_on_exception = true

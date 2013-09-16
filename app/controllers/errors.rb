@@ -53,6 +53,9 @@ error 500..503 do
   return if @internal_error_handled
   @internal_error_handled = true
 
+  # send the excpetion to Rollbar
+  Rollbar.report_exception(env['sinatra.error'])
+
   begin
     bug_submission = BugSubmission.create({
       details: {
