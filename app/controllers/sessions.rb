@@ -1,3 +1,7 @@
+get '/sessions/pulse', auth: [ :user ] do
+  blank_halt! 200
+end
+
 [ '/sessions', '/sessions/:sink' ].each do |r|
   get r, auth: [ :user ], provides: [ :json ] do
     rabl :"sessions/show"
@@ -50,11 +54,6 @@
     blank_halt! 200
   end
 end
-
-get '/sessions/pulse', auth: [ :user ] do
-  blank_halt! 200
-end
-
 
 # Support both GET and POST for callbacks
 
