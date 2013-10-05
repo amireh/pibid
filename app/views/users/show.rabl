@@ -22,8 +22,7 @@ node(:media) do |u|
     notices: {
       email: u.url(true) + '/notices/email',
       password: u.url(true) + '/notices/password'
-    },
-    stats:            u.url(true) + '/stats'
+    }
   }
 end
 
