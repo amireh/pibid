@@ -24,13 +24,13 @@ describe Journal do
 
   context "Instance methods" do
     context "Structure validation" do
-      it " scopemap" do
-        j = @u.journals.new({
-          scopemap: 123
-        })
-        expect { j.validate_structure! }.to raise_error
-        should_reject_with(j, :structure, "scope map must be hash")
-      end
+      # it " scopemap" do
+      #   j = @u.journals.new({
+      #     scopemap: 123
+      #   })
+      #   expect { j.validate_structure! }.to raise_error
+      #   should_reject_with(j, :structure, "scope map must be hash")
+      # end
 
       it "scope listing" do
         j = @u.journals.new({
@@ -44,7 +44,7 @@ describe Journal do
       it "an unmapped scope" do
         j = @u.journals.new({
           entries: {
-            bar: {}
+            bar: [{}]
           }
         })
 
@@ -52,41 +52,29 @@ describe Journal do
         should_reject_with(j, :structure, "missing scope identifier")
       end
 
-      it "scope collections" do
-        j = @u.journals.new({
-          scopemap: { bar_id: 1 },
-          entries: {
-            bar: []
-          }
-        })
+      # it "collection operations" do
+      #   j = @u.journals.new({
+      #     entries: {
+      #       accounts: [{
+      #         id: 1,
+      #         transactions: []
+      #       }]
+      #     }
+      #   })
 
-        expect { j.validate_structure! }.to raise_error
-        should_reject_with(j, :structure, "collections must be hash")
-      end
-
-      it "collection operations" do
-        j = @u.journals.new({
-          scopemap: { account_id: 1 },
-          entries: {
-            account: {
-              transactions: []
-            }
-          }
-        })
-
-        expect { j.validate_structure! }.to raise_error
-        should_reject_with(j, :structure, "collection operations must be hash")
-      end
+      #   expect { j.validate_structure! }.to raise_error
+      #   should_reject_with(j, :structure, "collection operations must be hash")
+      # end
 
       it "scope collection operation listing" do
         j = @u.journals.new({
-          scopemap: { account_id: 1 },
           entries: {
-            account: {
+            accounts: [{
+              id: 1,
               transactions: {
                 create: {}
               }
-            }
+            }]
           }
         })
 
@@ -96,15 +84,13 @@ describe Journal do
 
       it "an invalid operation" do
         j = @u.journals.new({
-          scopemap: {
-            account_id: 1
-          },
           entries: {
-            account: {
+            accounts: [{
+              id: 1,
               transactions: {
                 foo: []
               }
-            }
+            }]
           }
         })
 
@@ -116,63 +102,44 @@ describe Journal do
 
     context "Operation validation" do
       it "a valid operation" do
-        j = @u.journals.new({
-          scopemap: {
-            account_id: @a.id
-          },
-          entries: {
-            account: {
-              transactions: {
-                create: [{
-                  id: 'c123',
-                  data: {}
-                }]
-              }
-            }
-          }
-        })
+        j = @u.journals.new()
 
-        expect { j.validate!(:create, j.entries["account"]["transactions"]) }.not_to raise_error
+        expect {
+          j.validate!(:create, {
+            create: [{
+              id: 'c123',
+              data: {}
+            }]
+          })
+        }.not_to raise_error
       end
 
       it "missing a key" do
-        j = @u.journals.new({
-          scopemap: {
-            account_id: @a.id
-          },
-          entries: {
-            account: {
-              transactions: {
-                create: [{
-                  data: {}
-                }]
-              }
-            }
-          }
-        })
+        j = @u.journals.new
 
-        expect { j.validate!(:create, j.entries["account"]["transactions"]) }.to raise_error
+        expect {
+          j.validate!(:create, {
+            create: [{
+              data: {}
+            }]
+          })
+        }.to raise_error
         should_reject_with(j, :entries, "missing id")
       end
 
       it "invalid data" do
-        j = @u.journals.new({
-          scopemap: {
-            account_id: @a.id
-          },
-          entries: {
-            account: {
-              transactions: {
-                create: [{
-                  id: 'c123',
-                  data: []
-                }]
-              }
-            }
-          }
-        })
+        j = @u.journals.new
 
-        expect { j.validate!(:create, j.entries["account"]["transactions"]) }.to raise_error
+        expect {
+          j.validate!(:create, {
+            create: [{
+              id: 'c123',
+              data: []
+            }]
+          })
+        }.to raise_error
+
+        puts j.errors.inspect
         should_reject_with(j, :entries, "expected data to be hash")
       end
 
@@ -180,97 +147,21 @@ describe Journal do
 
     context "Scope resolution" do
       it '#resolve_scope!(user:account)' do
-        j = @u.journals.new({
-          "scopemap" => {
-            "account_id" => @account.id
-          }
-        })
-
-        j.resolve_scope!("account", @u).should == @u.account
-      end
-
-      it '#resolve_scope!(user:categories)' do
-        @c = @u.categories.first
-
-        j = @u.journals.new({
-          "scopemap" => {
-            "category_id" => @c.id
-          }
-        })
-
-        j.resolve_scope!("category", @u).should == @c
-      end
-
-      it '#resolve_scope!(user:payment_methods)' do
-        @pm = @u.payment_methods.first
-
-        j = @u.journals.new({
-          "scopemap" => {
-            "payment_method_id" => @pm.id
-          }
-        })
-
-        j.resolve_scope!("payment_method", @u).should == @pm
-      end
-
-      it '#resolve_scope!(account:transactions)' do
-        @d = valid! fixture(:deposit)
-
-        j = @u.journals.new({
-          "scopemap" => {
-            "transaction_id" => @d.id
-          }
-        })
-
-        j.resolve_scope!("transaction", @account).should == @d
+        @user.journals.new.resolve_scope!("account", @account.id, @user).should == @account
       end
 
       it '#resolve_scope!(invalid scope)' do
-        j = @u.journals.new({
-          "scopemap" => {
-            "bar_id" => 0
-          },
-          "entries" => {
-            "create" => [{
-              "scope" => "bar"
-            }]
-          }
-        })
+        j = @u.journals.new()
 
-        expect { j.resolve_scope!("bar", @user) }.to raise_error
+        expect { j.resolve_scope!("bar", 1, @user) }.to raise_error
         j.errors[:scopes].length.should == 1
         j.errors[:scopes].first.should match('Unrecognized scope')
       end
 
-      it '#resolve_scope!(missing scope id)' do
-        j = @u.journals.new({
-          "scopemap" => {
-          },
-          "entries" => {
-            "create" => [{
-              "scope" => "account:transactions"
-            }]
-          }
-        })
-
-        expect { j.resolve_scope!("account", @user) }.to raise_error
-        j.errors[:scopes].length.should == 1
-        j.errors[:scopes].first.should match('Missing scope identifier')
-      end
-
       it '#resolve_scope!(bad scope id)' do
-        j = @u.journals.new({
-          "scopemap" => {
-            "account_id" => 98127392187389
-          },
-          "entries" => {
-            "create" => [{
-              "scope" => "account:transactions"
-            }]
-          }
-        })
+        j = @u.journals.new()
 
-        expect { j.resolve_scope!("account", @user) }.to raise_error
+        expect { j.resolve_scope!("account", 12345678, @user) }.to raise_error
         j.errors[:scopes].length.should == 1
         j.errors[:scopes].first.should match('No such account')
       end
@@ -279,35 +170,21 @@ describe Journal do
 
     context "Scope collection resolution" do
       it '#resolve_collection!(account:transactions)' do
-        j = @u.journals.new({
-          "scopemap" => {
-            "account_id" => @a.id
-          },
-          "entries" => {
-            "create" => [{
-              "scope" => "account:transactions"
-            }]
-          }
-        })
+        j = @u.journals.new()
 
-        j.resolve_scope!("account", @user).should == @account
+        j.resolve_scope!("account", @account.id, @user).should == @account
         j.resolve_collection!("transactions", @account).should == @a.transactions
       end
 
       it '#resolve_collection!(bad collection)' do
-        j = @u.journals.new({
-          "scopemap" => {
-            "account_id" => @a.id
-          },
-          "entries" => {
-            "create" => [{
-              "scope" => "account:bar"
-            }]
-          }
-        })
+        j = @u.journals.new()
 
-        j.resolve_scope!("account", @user).should == @account
-        expect { j.resolve_collection!("bar", @account) }.to raise_error
+        j.resolve_scope!("account", @a.id, @user).should == @account
+
+        expect {
+          j.resolve_collection!("bar", @account)
+        }.to raise_error
+
         j.errors[:collections].length.should == 1
         j.errors[:collections].first.should match('Unrecognized collection')
       end
@@ -349,30 +226,31 @@ describe Journal do
     it "#resolve_dependencies" do
       j = @u.journals.new({
         entries: {
-          account:  {},
-          user:     {}
+          accounts:  [{}],
+          users:     [{}]
         }
       })
 
       j.resolve_dependencies
-      j.entries.to_a[0][0].should == "user"
+      j.entries.to_a[0][0].should == "users"
 
       j = @u.journals.new({
         entries: {
-          account:  {
-            transactions: {}
-          },
-          user: {
+          users: [{
+            accounts: [{
+              transactions: {}
+            }],
             payment_methods: {},
             categories: {}
-          }
+          }]
         }
       })
 
       j.resolve_dependencies
-      j.entries["user"].to_a.flatten.index("categories").should == 0
-      j.entries["user"].to_a.flatten.index("payment_methods").should == 2
+      puts j.entries
+      j.entries["users"][0].to_a.flatten.index("categories").should == 0
+      j.entries["users"][0].to_a.flatten.index("payment_methods").should == 2
+      j.entries["users"][0].to_a.flatten.index("accounts").should == 4
     end
-
   end
 end
