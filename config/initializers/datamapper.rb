@@ -7,6 +7,7 @@ configure do
     key:    settings.cookies['key'],
     secret: settings.cookies['secret'],
     secure: settings.cookies['secure'],
+    expire_after: 2.weeks,
     store: Moneta.new(:DataMapper, {
       repository: :default,
       setup: "mysql://#{dbc[:un]}:#{dbc[:pw]}@#{dbc[:host]}:#{dbc[:port]}/#{dbc[:db]}"
