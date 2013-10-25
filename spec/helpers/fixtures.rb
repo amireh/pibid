@@ -159,8 +159,12 @@ module Fixtures
         amount:     rand(50) + 1,
         frequency: :daily,
         flow_type: :positive,
-        recurs_on_month:  Time.now.month,
-        recurs_on_day:    Time.now.day,
+        weekly_days: nil,
+        monthly_days: nil,
+        yearly_day: nil,
+        yearly_months: nil,
+        # recurs_on_month:  Time.now.month,
+        # recurs_on_day:    Time.now.day,
         currency:   account.currency,
         created_at: DateTime.now,
         categories: [],
@@ -225,7 +229,7 @@ def fixture(resource, o = {})
 
     Fixtures[:account].build(user, o)
   when :deposit
-    @tx = Fixtures[:deposit].build(@account, o)
+    @tx = Fixtures[:deposit].build(o[:account] || @account, o)
   when :recurring
     @rtx = Fixtures[:recurring].build(@account, o)
   when :category

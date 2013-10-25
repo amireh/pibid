@@ -60,10 +60,7 @@ class String
     DataMapper::Inflector.pluralize(self)
   end
 
-  def pluralize(n = nil, with_adverb = false)
-    plural = to_plural
-    n && n != 1 ? "#{with_adverb ? 'are ' : ''}#{n} #{plural}" : "#{with_adverb ? 'is ' : ''}1 #{self}"
-  end
+  alias_method :pluralize, :to_plural
 
   def sanitize
     Addressable::URI.parse(self.downcase.gsub(/[[:^word:]]/u,'-').squeeze('-').chomp('-')).normalized_path

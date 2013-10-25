@@ -17,8 +17,6 @@ post '/access_tokens', auth: [ :user ], provides: [ :json ] do
 end
 
 put '/access_tokens/:digest', provides: [ :json ] do |digest|
-  halt 403 if logged_in?
-
   unless @access_token = AccessToken.first({ digest: digest })
     halt 401
   end

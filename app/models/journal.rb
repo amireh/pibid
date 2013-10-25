@@ -1,7 +1,12 @@
 class Journal
   include DataMapper::Resource
 
-  attr_accessor :processed, :dropped, :entries, :shadowmap, :scopemap, :operator
+  attr_accessor :processed,
+    :dropped,
+    :records,
+    :shadowmap,
+    :scopemap,
+    :operator
 
   property :id, Serial
   property :data, Text, default: '{}', length: 2**24-1 # 16 MBytes (MySQL MEDIUMTEXT)
@@ -10,6 +15,7 @@ class Journal
 
   Operations      = [ :create, :update, :delete ]
   CallbackStages  = [ :on_process ]
+
   RequiredKeys    = {
     create: [ 'id', 'data' ],
     update: [ 'id', 'data' ],
@@ -21,7 +27,12 @@ class Journal
   EC_RESOURCE_NOT_FOUND = 3
 
   class Context
-    attr_accessor :stage, :scope, :collection, :operations, :entries
+    attr_accessor :stage, :scope, :collection, :operations, :entries, :dropped
+
+    def initialize
+      @dropped = []
+      super
+    end
 
     def preprocessing?
       @stage == :preprocessing
@@ -32,12 +43,16 @@ class Journal
     end
   end
 
+  module GlobalScopeAccessors
+    def users
+      User
+    end
+  end
+
   def initialize(data)
     me = super(JSON.parse(data.to_json))
 
-    @scopemap ||= {}
-    @entries  ||= {}
-
+    @records ||= {}
     @ctx = Context.new
 
     # resolved scopes and collections
@@ -47,7 +62,7 @@ class Journal
     # resolved shadow keys
     @shadowmap  = {}
 
-    # processed & dropped entries
+    # processed & dropped records
     @processed  = {}
     @dropped    = {}
 
@@ -68,24 +83,17 @@ class Journal
       graceful: true
     }.merge(options)
 
-    @scopes['user'] = self.user
-    @collections['users'] = User
-
     validate_structure!
     resolve_dependencies
 
-    # resolve scopes and collections, and validate operation entries
-    @entries.each_pair do |scope, collections|
-      resolved_scope = resolve_scope!(scope, @user)
-
-      collections.each_pair do |collection, operations|
-        resolve_collection!(collection, resolved_scope)
-
+    # resolve scopes and collections, and validate operation records
+    traverse({
+      on_collection: lambda do |collection, scope, operations|
         validate!(:create, operations)
         validate!(:update, operations)
         validate!(:delete, operations)
       end
-    end
+    })
 
     preprocess
     process
@@ -107,45 +115,90 @@ class Journal
     @callbacks[stage] << method
   end
 
+  Scopes = {
+    user: User,
+    account: Account
+  }
+
+  def requires_global_accessors?(scope)
+    scope.is_a?(User)
+  end
+
+  def traverse(handlers = {})
+    @records.each do |record|
+      record = record.with_indifferent_access
+
+      unless scope = Scopes[record[:scope].to_sym]
+        reject! :scopes, "Unknown scope #{record[:scope]}"
+      end
+
+      unless scope = scope.get(record[:scope_id])
+        reject! :scopes, "No such resource #{record[:scope]}##{record[:scope_id]}"
+      end
+
+      scope.extend(GlobalScopeAccessors) if requires_global_accessors?(scope)
+
+      handlers[:on_scope].call(scope) if handlers[:on_scope]
+
+      unless scope.respond_to?(record[:collection])
+        reject! :scopes, "No such collection #{record[:collection]} in scope #{record[:scope]}"
+      end
+
+      collection = scope.send record[:collection]
+      operations = record[:operations] || {}
+
+      handlers[:on_collection].call(collection, scope, operations) if handlers[:on_collection]
+
+      operations.each_pair do |opcode, records|
+        records.each do |record|
+          handlers[:"on_#{opcode}"].call(record, collection, scope) if handlers[:"on_#{opcode}"]
+        end
+      end
+    end
+  end
+
   private
 
-  ScopePriorityList = [
-    :user,
-    :account
-  ]
-
-  CollectionPriorityList = [
+  PriorityList = [
     :users,
-    :accounts,
     :categories,
     :payment_methods,
+    :accounts,
     :transactions,
     :recurrings
   ]
 
-  def resolve_dependencies()
-
-    @entries = Hash[@entries.sort_by { |k,v|
-      scope_idx = ScopePriorityList.index(k.to_sym)
-
-      if scope_idx.nil?
-        reject! :structure, "Unknown scope '#{k}'."
-      end
-
-      scope_idx
+  def __sort(hash, key)
+    hash[key] = Hash[hash[key].sort_by { |k,v|
+      PriorityList.index(k.to_sym) || -1
     }]
+  end
 
-    @entries.each_pair { |scope, collections|
-      @entries[scope] = Hash[collections.sort_by { |k,v|
-        collection_idx = CollectionPriorityList.index(k.to_sym)
+  def resolve_dependencies()
+    @records.sort! { |a, b|
+      a = a.with_indifferent_access
+      b = b.with_indifferent_access
 
-        if collection_idx.nil?
-          reject! :structure, "Unknown collection '#{k}' in scope #{scope}."
-        end
+      PriorityList.index(a[:collection].to_sym) <=> PriorityList.index(b[:collection].to_sym)
 
-        collection_idx
-      }]
+      # if scope_idx.nil?
+      #   reject! :structure, "Unknown scope '#{k}'."
+      # end
+
+      # scope_idx
     }
+
+    # @records.each_pair { |scope, collections|
+    #   if collections.is_a?(Hash)
+    #     __sort(@records, scope)
+    #   elsif collections.is_a?(Array)
+    #     collections.each_with_index do |record, i|
+    #       if record.is_a?(Hash)
+    #         __sort(collections, i)
+    #       end
+    #     end
+    #   end
+    # }
   end
 
   def factory_for(collection, operation)
@@ -174,80 +227,75 @@ class Journal
     @scopemap["#{scope.to_s}_id"]
   end
 
-  def has_scope_identifier?(scope)
-    !!scope_identifier(scope)
-  end
-
   # Current structure:
   #
   # {
-  #   "scopemap": {
-  #     "[SCOPE]_id": 1
-  #   },
-  #   "entries": {
-  #     "[SCOPE]" {
-  #       "[COLLECTION]": {
-  #         "[OPERATION]": []
-  #       }
+  #   "records": [{
+  #     "scope": "string",
+  #     "scope_id": number,
+  #     "collection": "string",
+  #     "operations": {
+  #       "create": [],
+  #       "update": [],
+  #       "delete": []
   #     }
-  #   }
+  #   }]
   # }
   def validate_structure!
-    unless @scopemap.is_a?(Hash)
-      reject! :structure, 'Scope map must be of type Hash, got ' + @scopemap.class.name
+    unless @records.is_a?(Array)
+      reject! :structure, 'Record listing must be of type Array, got ' + @records.class.name
     end
 
-    unless @entries.is_a?(Hash)
-      reject! :structure, 'Scope listing must be of type Hash, got ' + @entries.class.name
-    end
+    @records.each do |record|
+      record = record.with_indifferent_access
 
-    @entries.each_pair do |scope, collections|
-      unless has_scope_identifier? scope
-        reject! :structure, "Missing scope identifier in scopemap for scope '#{scope.to_s}'"
+      %w[ scope scope_id collection ].each do |required_key|
+        unless record.has_key?(required_key)
+          reject! :structure, "Missing required record key '#{required_key.to_s}'"
+        end
       end
 
-      unless collections.is_a?(Hash)
-        reject! :structure, 'Collections must be of type Hash, got ' + collections.class.name
+      operations = record[:operations] ||= {}
+
+      unless operations.is_a?(Hash)
+        reject! :structure, 'Operations must be of type Hash, got ' + operations.class.name
       end
 
-      collections.each_pair do |collection, operations|
-        unless operations.is_a?(Hash)
-          reject! :structure, 'Collection operations must be of type Hash, got ' + operations.class.name
+      operations.each_pair do |op, entries|
+        unless %w[ create update delete ].include?(op.to_s)
+          reject! :structure,
+            "Unrecognized operation #{op}, supported operations are: [create, update, delete]"
         end
 
-        operations.each_pair do |op, entries|
-          unless [ :create, :update, :delete ].include?(op.to_sym)
-            reject! :structure, "Unrecognized operation #{op}, supported operations are: [create, update, delete]"
-          end
+        unless entries.is_a?(Array)
+          reject! :structure,
+            "Operation entries must be of type Array, got #{records.class.name}"
+        end
+      end # collection operations
 
-          unless entries.is_a?(Array)
-            reject! :structure, "Collection operation entries must be of type Array, got #{entries.class.name}"
-          end
-        end # scope collection operations
-
-      end # scope collections
-
-    end # scopes
+    end # records
   end
 
-  # Validates the specified operation entry listing for structure validity,
-  # by going through the entries and validating that the specified required
-  # keys are existent and valid within the entry.
+  # Validates the specified operation record listing for structure validity,
+  # by going through the records and validating that the specified required
+  # keys are existent and valid within the record.
   #
-  # Each valid entry will have two new keys defined, if applicable:
+  # Each valid record will have two new keys defined, if applicable:
   #
-  # => [:scope] the resolved scope specified in the entry key 'scope' (if any)
-  # => [:collection] the resolved scope collection specified in the entry key 'scope' (if any)
+  # => [:scope] the resolved scope specified in the record key 'scope' (if any)
+  # => [:collection] the resolved scope collection specified in the record key 'scope' (if any)
   #
-  # @error :structure, if entry listing is not an array
-  # @error :entries, entry is not a Hash
-  # @error :entries, missing a required key
-  # @error :entries, 'data' is a required key and entry['data'] is not a Hash
+  # @error :structure, if record listing is not an array
+  # @error :records, record is not a Hash
+  # @error :records, missing a required key
+  # @error :records, 'data' is a required key and record['data'] is not a Hash
   #
   # @see resolve_scope
   # @see resolve_collection
   def validate!(op, entries)
-    entries = (entries || {})[op.to_s]
+    entries = (entries || {}).with_indifferent_access
+    entries = entries[op]
+
     return true if !entries
 
     unless entries.is_a?(Array)
@@ -276,151 +324,94 @@ class Journal
     true
   end
 
-  def resolve_scope!(key, parent_scope = self.user)
-    unless resolved_scope = @scopes[key]
-      # validate that there actually is such a scope
-      unless parent_scope.respond_to?(key.to_plural)
-        reject! :scopes, "Unrecognized scope: #{key}"
-      end
-
-      # we need a scope id
-      unless @scopemap.has_key?("#{key}_id")
-        reject! :scopes, "Missing scope identifier: #{key}"
-      end
-
-      scope_id = scope_identifier(key).to_i
-
-      # resolve the scope instance
-      unless resolved_scope = parent_scope.send(key.to_plural).get(scope_id)
-        reject! :scopes, "No such #{key}##{scope_id} for #{parent_scope.class.name}##{parent_scope.id}"
-      end
-
-      # define it so we don't have to resolve it in any subsequent entries
-      @scopes[key] = resolved_scope
-
-      # inject the operator with the scope so the factories have access to it, if needed
-      operator.instance_variable_set("@#{key}", resolved_scope)
-    end
-
-    resolved_scope
-  end
-
-  def resolve_collection!(key, scope)
-    unless resolved_collection = @collections[key]
-      if !scope.respond_to?(key.to_sym)
-        reject! :collections, "Unrecognized collection '#{key}' in scope #{scope.class.name}"
-      end
-
-      resolved_collection = @collections[key] = scope.send(key)
-
-      # inject the operator with the collection so the factories have access to it, if needed
-      operator.instance_variable_set("@#{key}", resolved_collection)
-    end
-
-    resolved_collection
-  end
-
   def preprocess
     @ctx.stage = :preprocessing
 
-    @entries.each_pair do |sid, collections|
-      @ctx.scope = @scopes[sid]
+    pass do |op, entries|
+      handler = method("preprocess_#{op}")
 
-      collections.each_pair do |cid, operations|
-        @ctx.collection = @collections[cid]
-        @ctx.operations = operations
-
-        operations.each_pair do |op, entries|
-          @ctx.entries = entries
-
-          method_id = "preprocess_#{op}".to_sym
-          entries.each_with_index do |entry, idx|
-            send(method_id, entry, idx)
-          end
-        end # collection operations
-      end # scope collections
-    end # scopes
+      entries.each_with_index do |entry, idx|
+        handler.call(entry, idx)
+      end
+    end
   end
 
   def process
-    @entries.each_pair do |sid, collections|
-      @ctx.scope = @scopes[sid]
+    @ctx.stage = :processing
 
-      collections.each_pair do |cid, operations|
-        @ctx.collection = @collections[cid]
+    pass do |op, entries|
+      handler = method("process_#{op}")
+
+      entries.each do |entry|
+        handler.call(entry)
+      end
+    end
+  end
+
+  def pass
+    traverse({
+      on_scope: lambda do |scope|
+        @ctx.scope = scope
+      end,
+
+      on_collection: lambda do |collection, scope, operations|
+        @ctx.collection = collection
         @ctx.operations = operations
+        @ctx.scope = scope
 
         operations.each_pair do |op, entries|
           @ctx.entries = entries
 
-          method_id = "process_#{op}".to_sym
-          entries.each do |entry|
-            send(method_id, entry)
-          end
+          yield(op, entries)
         end # collection operations
-      end # scope collections
-    end # scopes
+      end
+    })
   end
 
-  def mark_processed(op, entry)
-    sid, cid = current_scope_id, current_collection_id
+  def mark_processed(op, record)
+    scope, scope_id, cid = current_scope_id, @ctx.scope.id.to_s, current_collection_id
 
     # @processed[:total] += 1
 
-    @processed[sid] ||= {}
-    @processed[sid][cid] ||= {}
-    @processed[sid][cid][op.to_sym] ||= []
-
-    @processed[sid][cid][op.to_sym] << {
-      id: entry['id']
+    @processed[scope] ||= {}
+    @processed[scope][scope_id] ||= {}
+    @processed[scope][scope_id][cid] ||= {}
+    @processed[scope][scope_id][cid][op.to_sym] ||= []
+    @processed[scope][scope_id][cid][op.to_sym] << {
+      id: record['id']
     }
 
     true
   end
 
-  def mark_dropped(op, entry, *err)
-    sid, cid = current_scope_id, current_collection_id
+  def mark_dropped(op, record, *err)
+    scope, scope_id, cid = current_scope_id, @ctx.scope.id.to_s, current_collection_id
 
-    @dropped[sid] ||= {}
-    @dropped[sid][cid] ||= {}
-    @dropped[sid][cid][op.to_sym] ||= []
-    @dropped[sid][cid][op.to_sym] << {
-      id: entry['id'],
+    @dropped[scope] ||= {}
+    @dropped[scope][scope_id] ||= {}
+    @dropped[scope][scope_id][cid] ||= {}
+    @dropped[scope][scope_id][cid][op.to_sym] ||= []
+    @dropped[scope][scope_id][cid][op.to_sym] << {
+      id: record['id'],
       errors: [ err ].flatten
     }
 
     false
   end
 
-  def preprocess_delete(entry, idx)
-    entry['id'] = entry['id'].to_i
+  def map_shadow_resource(shadow_id, resource)
+    scope, scope_id, cid = current_scope_id, @ctx.scope.id.to_s, current_collection_id
+
+    @shadowmap[scope] ||= {}
+    @shadowmap[scope][scope_id] ||= {}
+    @shadowmap[scope][scope_id][cid] ||= {}
+    @shadowmap[scope][scope_id][cid][shadow_id.to_s] = resource.id.to_i
+
+    @ctx.collection.shadow(shadow_id, resource)
+
+    true
   end
 
-  def process_delete(entry)
-    model = @ctx.collection.get(entry['id'])
-
-    if status = model && model.destroy
-      # delete any create or update entries that are operating on this resource
-
-      [ @ctx.operations['create'], @ctx.operations['update'] ].each_with_index { |sibling_entries, op_idx|
-        next if !sibling_entries
-
-        index = sibling_entries.index { |sibling_entry|
-          entry['id'] == sibling_entry['id']
-        }
-
-        if index
-          mark_dropped([:create,:update][op_idx], sibling_entries[index], EC_RESOURCE_GONE)
-        end
-      }
-
-      mark_processed :delete, entry
-    else
-      mark_dropped :delete, entry, (model && model.errors)
-    end
-
-    status
-  end
 
   def current_scope_id
     @ctx.scope.class.name.underscore.downcase
@@ -445,19 +436,12 @@ class Journal
     !!factory_for(collection, :update)
   end
 
-  def map_shadow_resource(shadow_id, resource)
-    sid, cid = current_scope_id, current_collection_id
-
-    @shadowmap[sid] ||= {}
-    @shadowmap[sid][cid] ||= {}
-    @shadowmap[sid][cid][shadow_id.to_s] = resource.id.to_i
-
-    @ctx.collection.shadow(shadow_id, resource)
-
+  def can_delete?(*args)
+    # we delete stuff manually, no factories required
     true
   end
 
-  def preprocess_create(entry, entry_idx)
+  def preprocess_create(record, record_idx)
     cid = current_collection_fqid
 
     # make sure we know how to create this resource
@@ -465,48 +449,48 @@ class Journal
       reject! :create, "Unrecognized operation #{factory_id(cid, :create)}"
     end
 
-    # has there been a CREATE entry with the same shadow id in this collection?
+    # has there been a CREATE record with the same shadow id in this collection?
     @ctx.entries.each_with_index { |sibling, idx|
-      if sibling['id'] == entry['id'] && idx != entry_idx
+      if sibling['id'] == record['id'] && idx != record_idx
         unless graceful?
-          reject! :create, "Duplicate shadow resource #{cid}##{entry['id']}"
+          reject! :create, "Duplicate shadow resource #{cid}##{record['id']}"
         end
 
         # because this is so much easier and cleaner than trying to remove all duplicates
         # from the array, we'll simply test this flag in #process_create
-        sibling['dropped'] = true
+        drop sibling
       end
     }
 
-    # we process the very last CREATE entry for this resource
-    entry['dropped'] = false
+    # we process the very last CREATE record for this resource
+    undrop record
   end
 
-  def process_create(entry)
-    if entry['dropped']
-      return mark_dropped :create, entry, EC_RESOURCE_OVERWRITTEN
+  def process_create(record)
+    if dropped?(record)
+      return mark_dropped :create, record, EC_RESOURCE_OVERWRITTEN
     end
 
     factory, resource = factory_for(current_collection_fqid, :create), nil
 
     rc, err = catch :halt do
       (@callbacks[:on_process] || []).map(&:call)
-      resource = factory.call(@ctx.scope, entry['data'] || {})
+      resource = factory.call(@ctx.scope, record['data'] || {})
       nil
     end
 
     if (rc && err) || !resource.saved?
-      return mark_dropped :create, entry, (err || resource.errors)
+      return mark_dropped :create, record, (err || resource.errors)
     end
 
     # map the shadow id to the real resource id
-    # puts "mapping shadow #{entry['scope']}:#{entry['id']} to #{resource.id}"
-    map_shadow_resource(entry['id'], resource)
+    # puts "mapping shadow #{record['scope']}:#{record['id']} to #{resource.id}"
+    map_shadow_resource(record['id'], resource)
 
-    mark_processed :create, entry
+    mark_processed :create, record
   end
 
-  def preprocess_update(entry,idx)
+  def preprocess_update(record,idx)
     cid = current_collection_fqid
 
     # make sure we know how to create this resource
@@ -515,32 +499,79 @@ class Journal
     end
 
     if @ctx.collection == User then
-      entry['id'] = self.user.id
+      record['id'] = self.user.id
     end
-
   end
 
-  def process_update(entry)
+  def process_update(record)
     factory, resource = factory_for(current_collection_fqid, :update), nil
 
-    unless resource = @ctx.collection.get(entry['id'])
+    unless resource = @ctx.collection.get(record['id'])
       unless graceful?
-        halt 400, "No such resource##{entry['id']} in collection #{current_collection_id}"
+        halt 400, "No such resource##{record['id']} in collection #{current_collection_id}"
       end
 
-      return mark_dropped :update, entry, EC_RESOURCE_NOT_FOUND
+      return mark_dropped :update, record, EC_RESOURCE_NOT_FOUND
     end
 
     rc, err = catch :halt do
       (@callbacks[:on_process] || []).map(&:call)
-      resource = factory.call(resource, entry['data'] || {})
+      resource = factory.call(resource, record['data'] || {})
       nil
     end
 
     if (rc && err) || resource.dirty?
-      return mark_dropped :update, entry, (err || resource.errors)
+      return mark_dropped :update, record, (err || resource.errors)
     end
 
-    mark_processed :update, entry
+    mark_processed :update, record
+  end
+
+  def preprocess_delete(record, idx)
+    record['id'] = record['id'].to_i
+
+    # make sure we know how to create this resource
+    unless can_delete?
+      reject! :delete, "Unrecognized operation #{factory_id(cid, :delete)}"
+    end
+  end
+
+  def process_delete(record)
+    model = @ctx.collection.get(record['id'])
+
+    if status = model && model.destroy
+      # delete any create or update records that are operating on this resource
+
+      [ @ctx.operations['create'], @ctx.operations['update'] ].each_with_index do |sibling_records, op_idx|
+        next if !sibling_records
+
+        index = sibling_records.index { |sibling_record|
+          record['id'] == sibling_record['id']
+        }
+
+        if index
+          mark_dropped([:create,:update][op_idx], sibling_records[index], EC_RESOURCE_GONE)
+        end
+      end
+
+      mark_processed :delete, record
+    else
+      mark_dropped :delete, record, (model && model.errors)
+    end
+
+    status
+  end
+
+  def drop(record)
+    # puts ">> Marked record as dropped (overwritten): #{sibling.to_json}"
+    @ctx.dropped << record.hash
+  end
+
+  def undrop(record)
+    @ctx.dropped.delete(record.hash)
+  end
+
+  def dropped?(record)
+    @ctx.dropped.include?(record.hash)
   end
 end

@@ -7,6 +7,10 @@ node(:links) do |u|
   u.links.map { |u| u.provider }
 end
 
+node :accounts do |user|
+  partial "accounts/show", object: user.accounts
+end
+
 child :account do |a|
   node(:id) { |a| a.id }
 end
@@ -17,7 +21,6 @@ node(:media) do |u|
     accounts:         u.url(true) + '/accounts',
     categories:       u.url(true) + '/categories',
     payment_methods:  u.url(true) + '/payment_methods',
-    journal:          u.url(true) + '/journal',
     journals:         u.url(true) + '/journals',
     notices: {
       email: u.url(true) + '/notices/email',

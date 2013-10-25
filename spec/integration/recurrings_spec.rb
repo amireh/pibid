@@ -17,7 +17,7 @@ describe "Recurrings" do
       note: "Salary",
       flow_type: "positive",
       frequency: "monthly",
-      recurs_on_day: 18
+      monthly_days: [18]
     }
 
     rc.should succeed
@@ -30,8 +30,8 @@ describe "Recurrings" do
       note: "Salary",
       flow_type: "positive",
       frequency: "yearly",
-      recurs_on_day: 18,
-      recurs_on_month: 7
+      yearly_day: 18,
+      yearly_months: [7]
     }
 
     rc.should succeed
@@ -44,10 +44,22 @@ describe "Recurrings" do
       note: "Salary",
       flow_type: "positive",
       frequency: "yearly",
-      recurs_on_day: 18
+      yearly_day: 18
     }
 
-    rc.should fail(400, 'Missing :recurs_on_month')
+    rc.should fail(400, 'Missing :yearly_months')
+  end
+
+  scenario "Creating a weekly recurring" do
+    rc = api_call post "/accounts/#{@account.id}/recurrings", {
+      amount: 5,
+      note: "Salary",
+      flow_type: "positive",
+      frequency: "weekly",
+      weekly_days: [ 'tuesday' ]
+    }
+
+    rc.should succeed
   end
 
   scenario "Creating a monthly recurring" do
@@ -56,7 +68,7 @@ describe "Recurrings" do
       note: "Salary",
       flow_type: "positive",
       frequency: "monthly",
-      recurs_on_day: 18
+      monthly_days: [18]
     }
 
     rc.should succeed
@@ -70,7 +82,7 @@ describe "Recurrings" do
       frequency: "monthly"
     }
 
-    rc.should fail(400, 'Missing :recurs_on_day')
+    rc.should fail(400, 'Missing :monthly_days')
   end
 
   scenario "Creating a daily recurring" do
@@ -91,6 +103,24 @@ describe "Recurrings" do
     rc.should succeed
 
     tx.refresh.amount.should == 10
+  end
+
+  scenario "deactivating a transie" do
+    tx = valid! fixture(:recurring)
+
+    rc = api_call patch "/accounts/#{@account.id}/recurrings/#{tx.id}", { active: false }
+    rc.should succeed
+
+    tx.refresh.active?.should == false
+  end
+
+  scenario "re-activating a transie" do
+    tx = valid! fixture(:recurring, { active: false })
+
+    rc = api_call patch "/accounts/#{@account.id}/recurrings/#{tx.id}", { active: true }
+    rc.should succeed
+
+    tx.refresh.active?.should == true
   end
 
   context "Tagging recurries" do

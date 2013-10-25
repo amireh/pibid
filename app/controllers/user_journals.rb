@@ -8,7 +8,7 @@ get '/users/:user_id/journals/:journal_id',
   end
 end
 
-post '/users/:user_id/journal',
+post '/users/:user_id/journals',
   auth:     [ :user ],
   provides: [ :json ],
   requires: [ :user ] do
@@ -16,9 +16,8 @@ post '/users/:user_id/journal',
   # puts "Journal parameters: #{params}"
   graceful = params.has_key?('graceful') ? params['graceful'] : true
 
-  api_optional!({
-    scopemap: nil,
-    entries:  nil
+  api_required!({
+    records:  nil
   })
 
   @journal = @user.journals.new(api_params)
@@ -45,18 +44,20 @@ post '/users/:user_id/journal',
 
   original_processed_map = @journal.processed.clone
 
-  @journal.shadowmap.each_pair { |scope, collections|
-    collections.each_pair { |collection, entries|
-      operations = @journal.processed[scope][collection]
+  @journal.shadowmap.each_pair { |scope, instances|
+    instances.each_pair { |scope_id, collections|
+      collections.each_pair { |collection, entries|
+        operations = @journal.processed[scope][scope_id][collection]
 
-      entries.each_pair do |shadow_id, genuine_id|
-        operations.each_pair do |op, entries|
+        entries.each_pair do |shadow_id, genuine_id|
+          operations.each_pair do |op, entries|
 
-          entries.select { |entry| entry[:id] == shadow_id }.each { |entry|
-            entry[:id] = genuine_id
-          }
+            entries.select { |entry| entry[:id] == shadow_id }.each { |entry|
+              entry[:id] = genuine_id
+            }
+          end
         end
-      end
+      }
     }
   }
 

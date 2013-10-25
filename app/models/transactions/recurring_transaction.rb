@@ -5,15 +5,42 @@ class Recurring < Transaction
   belongs_to :account, required: true
   has n, :transactions, :constraint => :set_nil
 
-  attr_accessor :recurs_on_month, :recurs_on_day
+  Frequencies = [ :daily, :weekly, :monthly, :yearly  ]
+  WeeklyDays = [ :sunday, :monday, :tuesday, :wednesday, :thursday, :friday, :saturday ]
+  # attr_accessor :recurs_on_month, :recurs_on_day
 
   property :flow_type,  Enum[ :positive, :negative ],      default: :positive
-  property :frequency,  Enum[ :daily, :monthly, :yearly ], default: :monthly
-  property :recurs_on,  DateTime, default: lambda { |*_| DateTime.now.utc }
+  property :frequency,  Enum[ :daily, :monthly, :yearly, :weekly ]
+  # property :recurs_on,  DateTime, default: lambda { |*_| DateTime.now.utc }
   property :last_commit, DateTime, allow_nil: true
   property :active,     Boolean, default: true
 
+  property :every, Integer, default: 1
+
+  property :weekly_days, CommaSeparatedList
+  property :monthly_days, CommaSeparatedList
+
+  property :yearly_months, CommaSeparatedList
+  property :yearly_day, Integer
+
+  validates_presence_of :every
+  validates_presence_of :frequency
+  validates_presence_of :weekly_days, :if => lambda { |t| t.frequency == :weekly }
+  validates_presence_of :monthly_days, :if => lambda { |t| t.frequency == :monthly }
+  validates_presence_of :yearly_months, :if => lambda { |t| t.frequency == :yearly }
+  validates_presence_of :yearly_day, :if => lambda { |t| t.frequency == :yearly }
+
   before :save do
+    self.weekly_days = [ self.weekly_days ] unless self.weekly_days.is_a?(Array)
+    self.monthly_days = [ self.monthly_days ] unless self.monthly_days.is_a?(Array)
+    self.yearly_months = [ self.yearly_months ] unless self.yearly_months.is_a?(Array)
+
+    [ :weekly_days, :monthly_days, :yearly_months ].each do |arrkey|
+      self[arrkey].reject! { |v| !v }
+    end
+
+    self.weekly_days = self.weekly_days.map(&:to_sym)
+
     if !self.note || self.note.to_s.empty?
       self.errors.add :note,
         self.flow_type == :negative ?
@@ -23,68 +50,58 @@ class Recurring < Transaction
       throw :halt
     end
 
-    unless [ :yearly, :monthly, :daily ].include?( (self.frequency||'').to_sym)
+    unless Frequencies.include?( (self.frequency||'').to_sym)
       errors.add :frequency, "Frequency must be one of [ :yearly, :monthly, :daily ]"
-    end
-
-    unless [ :negative, :positive ].include?( (self.flow_type||'').to_sym)
-      return "Flow type must be either :negative or :positive"
-    end
-
-    if attribute_dirty?(:recurs_on) || !recurs_on
-      self.recurs_on = build_recurrence_date(self.frequency, recurs_on_month, recurs_on_day)
-    end
-  end
-
-  def build_recurrence_date(frequency, month, day)
-    recurs_on = nil
-    this_year = Time.now.utc.year
-
-    frequency = frequency.to_sym
-    month ||= 0
-    day   ||= 0
-
-    if self.recurs_on then
-      month ||= self.recurs_on.month
-      day   ||= self.recurs_on.day
-    end
-
-    month, day = month.to_i, day.to_i
-
-    if frequency == :yearly && (month < 1 || month > 12)
-      errors.add :recurs_on_month,  "Bad recurrence month [#{month}]; must be between 1 and 12"
       throw :halt
     end
 
-    if frequency != :daily && (day < 1 || day > 31)
-      errors.add :recurs_on_day,    "Bad recurrence day [#{day}]; must be between 1 and 31"
+    unless [ :negative, :positive ].include?( (self.flow_type||'').to_sym)
+      errors.add :flow_type, "Flow type must be either :negative or :positive"
       throw :halt
     end
 
     case frequency
-    when :monthly
-      # only the day is used in this case
-      begin
-        recurs_on = Time.utc(this_year, 1, day)
-      rescue
-        errors.add :recurs_on, "Bad recurrence day: [#{day}]"
-        throw :halt
-      end
-
     when :yearly
-      # the day and month are used in this case
-      begin
-        recurs_on = Time.utc(this_year, month, day)
-      rescue
-        errors.add :recurs_on, "Bad recurrence day or month [#{day}, #{month}]"
+      if yearly_day > 31 || yearly_day < -1
+        errors.add :yearly_day, 'Yearly day must be between -1 and 31'
         throw :halt
       end
-    when :daily
-      recurs_on = Time.utc(this_year, 1, 1)
+    when :monthly
+      monthly_days.each do |day|
+        day = day.to_i
+
+        if day < -1 || day > 31
+          errors.add :monthly_days, 'Monthly days must be between -1 and 31'
+          throw :halt
+        end
+      end
+    when :weekly
+      weekly_days.each do |day|
+        day = (day||'').to_sym
+
+        unless WeeklyDays.include?(day)
+          errors.add :weekly_days, "Weekly days must be one (or more) of #{WeeklyDays.join(', ')}"
+          throw :halt
+        end
+      end
     end
 
-    recurs_on
+    begin
+      schedule
+    rescue Exception => e
+      errors.add :schedule, e.message
+      throw :halt
+    end
   end
+
+  alias_method :_monthly_days=, :monthly_days=
+  def monthly_days=(v)
+    v ||= []
+    v = [ v ] unless v.is_a?(Array)
+
+    send :_monthly_days=, v
+  end
+
 
   def +(y)
     amount * (flow_type == :negative ? -1 : 1) + y
@@ -104,16 +121,17 @@ class Recurring < Transaction
   def schedule
     s = IceCube::Schedule.new( commit_anchor )
 
-    r = case frequency
+    s.add_recurrence_rule case frequency
     when :yearly
-      IceCube::Rule.yearly.month_of_year(recurs_on.month).day_of_month(recurs_on.day)
+      IceCube::Rule.yearly(every).month_of_year(yearly_months || 1).day_of_month(yearly_day || 1)
     when :monthly
-      IceCube::Rule.monthly.day_of_month(recurs_on.day)
+      IceCube::Rule.monthly(every).day_of_month(monthly_days || [])
+    when :weekly
+      IceCube::Rule.weekly(every).day(weekly_days || [])
     when :daily
-      IceCube::Rule.daily
+      IceCube::Rule.daily(every)
     end
 
-    s.add_recurrence_rule(r)
     s
   end
 
@@ -178,6 +196,6 @@ class Recurring < Transaction
   end
 
   def active?
-    self.active
+    !!self.active
   end
 end
