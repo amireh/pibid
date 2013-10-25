@@ -142,4 +142,26 @@ namespace :pibi do
     puts errors.join("\n")
     # migrate accounts
   end
+
+  desc 'recurrences to use daily/weekly/monthly/yearly with IceCube'
+  task :migrate_recurrences_to_icecube => :environment do
+    class Recurring
+      property :recurs_on, DateTime
+    end
+
+    transactions = Recurring.all
+    transactions.each do |t|
+      case t.frequency
+      when :yearly
+        t.update!({
+          yearly_day: t.recurs_on.day,
+          yearly_months: [ t.recurs_on.month ]
+        })
+      when :monthly
+        t.update!({
+          monthly_days: [ t.recurs_on.day ]
+        })
+      end
+    end
+  end
 end
