@@ -10,6 +10,7 @@ node(:media) do |a|
     purge_url: a.url + '/purge',
     transactions: {
       url:  a.url(true) + '/transactions',
+      aggregate: a.user.url(true) + '/transactions',
       drilldown: a.url(true) + '/transactions/drilldown'
     },
     recurrings: a.url(true) + '/recurrings'
