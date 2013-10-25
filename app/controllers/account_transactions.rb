@@ -15,7 +15,7 @@ helpers do
       when :daily
       end
 
-      current_account.send("#{type}_transactions", Time.utc(y, m, d))
+      @account.send("#{type}_transactions", Time.utc(y, m, d))
     rescue ArgumentError => e
       halt 400, "Invalid drilldown segment [YYYY/MM/DD]: '#{y}/#{m}/#{d}'"
     end
@@ -96,15 +96,51 @@ helpers do
   end
 end
 
+get '/users/:user_id/transactions',
+  auth: [ :user ],
+  requires: [ :user ],
+  provides: [ :json ] do
+
+  api_required!({
+    from: lambda { |date|
+      unless @from = parse_date(date)
+        return 'Invalid :from date, expected format: MM/DD/YYYY'
+      end
+    },
+    to: lambda { |date|
+      unless @to = parse_date(date)
+        return 'Invalid :to date, expected format: MM/DD/YYYY'
+      end
+    }
+  })
+
+  @transactions = []
+
+  @user.accounts.each do |account|
+    @transactions << account.transactions_in({
+      begin: @from,
+      end: @to
+    })
+  end
+
+  @transactions.flatten!
+
+  puts @transactions.to_json
+
+  respond_with @transactions do |f|
+    f.json { rabl :"transactions/index", collection: @transactions }
+  end
+end
+
 get '/accounts/:account_id/transactions/drilldown/:year',
   auth: [ :user ],
   requires: [ :account ],
   provides: [ :json ] do
 
-  @transies = transactions_in(:yearly, params[:year])
+  @transactions = transactions_in(:yearly, params[:year])
 
-  respond_with @transies do |f|
-    f.json { rabl :"transactions/index", collection: @transies }
+  respond_with @transactions do |f|
+    f.json { rabl :"transactions/index", collection: @transactions }
   end
 end
 
@@ -113,10 +149,10 @@ get '/accounts/:account_id/transactions/drilldown/:year/:month',
   requires: [ :account ],
   provides: [ :json ] do
 
-  @transies = transactions_in(:monthly, params[:year], params[:month])
+  @transactions = transactions_in(:monthly, params[:year], params[:month])
 
-  respond_with @transies do |f|
-    f.json { rabl :"transactions/index", collection: @transies }
+  respond_with @transactions do |f|
+    f.json { rabl :"transactions/index", collection: @transactions }
   end
 end
 
@@ -125,10 +161,10 @@ get '/accounts/:account_id/transactions/drilldown/:year/:month/:day',
   requires: [ :account ],
   provides: [ :json ] do
 
-  @transies = transactions_in(:daily, params[:year], params[:month], params[:day])
+  @transactions = transactions_in(:daily, params[:year], params[:month], params[:day])
 
-  respond_with @transies do |f|
-    f.json { rabl :"transactions/index", collection: @transies }
+  respond_with @transactions do |f|
+    f.json { rabl :"transactions/index", collection: @transactions }
   end
 end
 
