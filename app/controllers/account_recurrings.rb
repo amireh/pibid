@@ -24,22 +24,25 @@ helpers do
     end
 
     case api_param :frequency
+    when 'weekly'
+      api_required!({
+        weekly_days: nil
+      }, p)
     when 'monthly'
       api_required!({
-        recurs_on_day: nil
+        monthly_days: nil
       }, p)
     when 'yearly'
       api_required!({
-        recurs_on_day: nil,
-        recurs_on_month: nil
+        yearly_day: nil,
+        yearly_months: nil
       }, p)
     end
 
     api_optional!({
+      every: nil,
       currency:   nil,
       categories: nil,
-      recurs_on_day: nil,
-      recurs_on_month: nil,
       active: nil,
       payment_method_id: lambda { |pm_id|
         unless @pm = account.user.payment_methods.get(pm_id)
@@ -58,7 +61,11 @@ helpers do
     }
 
     if api_has_param?(:categories)
-      data[:categories] = (api_consume!(:categories)||[]).map { |cid| user.categories.get(cid) }.reject(&:nil?)
+      data[:categories] = (api_consume!(:categories)||[]).map do |cid|
+        user.categories.get(cid)
+      end
+
+      data[:categories].reject!(&:nil?)
     end
 
     transaction.attributes = api_params(data)
