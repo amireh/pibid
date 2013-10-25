@@ -18,6 +18,36 @@ describe "Transactions" do
     )
   end
 
+  it 'retrieving transactions from all accounts' do
+    account1 = @account
+    account2 = valid! fixture(:account)
+
+    for i in 1..5 do
+      valid! fixture(:deposit, {
+        amount: 5,
+        occured_on: Time.utc(2012, 1, i),
+        account: account1
+      })
+
+      valid! fixture(:deposit, {
+        amount: 5,
+        occured_on: Time.utc(2012, 1, i),
+        account: account2
+      })
+
+    end
+
+    rc = api_call get "/users/#{@user.id}/transactions", {
+      from: '1/1/2012',
+      to: '1/6/2012'
+    }
+
+    rc.should succeed
+    rc.body["transactions"].length.should == 10
+
+    account2.destroy
+  end
+
   it "Retrieving yearly transies" do
     for i in 0..5 do
       month = i < 2 ? 1 : 2

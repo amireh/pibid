@@ -23,25 +23,25 @@ describe "Recurring Transactions" do
 
   context "validation" do
     it "should validate recurrence in yearly frequency" do
-      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: nil })
-      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: 1, recurs_on_day: nil })
-      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: -1, recurs_on_day: 1 })
-      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: 1, recurs_on_day: 300 })
-      invalid!  fixture(:recurring, { frequency: :yearly, recurs_on_month: 1, recurs_on_day: 35 })
+      invalid!  fixture(:recurring, { frequency: :yearly, yearly_months: [nil] })
+      invalid!  fixture(:recurring, { frequency: :yearly, yearly_months: [1],  yearly_day: nil })
+      invalid!  fixture(:recurring, { frequency: :yearly, yearly_months: [-1], yearly_day: 1 })
+      invalid!  fixture(:recurring, { frequency: :yearly, yearly_months: [1],  yearly_day: 300 })
+      invalid!  fixture(:recurring, { frequency: :yearly, yearly_months: [1],  yearly_day: 35 })
 
-      valid!    fixture(:recurring, { frequency: :yearly, recurs_on_month: 1, recurs_on_day: 1 })
-      valid!    fixture(:recurring, { frequency: :yearly, recurs_on_month: 8, recurs_on_day: 19 })
+      valid!    fixture(:recurring, { frequency: :yearly, yearly_months: [1], yearly_day: 1 })
+      valid!    fixture(:recurring, { frequency: :yearly, yearly_months: [8,2], yearly_day: 19 })
     end
 
     it "should validate recurrence in monthly frequency" do
-      invalid!  fixture(:recurring, { frequency: :monthly, recurs_on_day: nil })
-      invalid!  fixture(:recurring, { frequency: :monthly, recurs_on_day: 300 })
-      invalid!  fixture(:recurring, { frequency: :monthly, recurs_on_day: 'me' })
-      invalid!  fixture(:recurring, { frequency: :monthly, recurs_on_day: -5 })
+      invalid!  fixture(:recurring, { frequency: :monthly, monthly_days: nil })
+      invalid!  fixture(:recurring, { frequency: :monthly, monthly_days: [300] })
+      invalid!  fixture(:recurring, { frequency: :monthly, monthly_days: 'me' })
+      invalid!  fixture(:recurring, { frequency: :monthly, monthly_days: -5 })
 
-      valid!    fixture(:recurring, { frequency: :monthly, recurs_on_day: 15 })
-      valid!    fixture(:recurring, { frequency: :monthly, recurs_on_day: 1 })
-      valid!    fixture(:recurring, { frequency: :monthly, recurs_on_day: 28 })
+      valid!    fixture(:recurring, { frequency: :monthly, monthly_days: [15] })
+      valid!    fixture(:recurring, { frequency: :monthly, monthly_days: [1,6 ]})
+      valid!    fixture(:recurring, { frequency: :monthly, monthly_days: [28] })
     end
 
     it "should validate flow type" do
@@ -60,9 +60,7 @@ describe "Recurring Transactions" do
 
 
   it "should commit a recurring transaction" do
-    @account.recurrings.all.count.should == 0
     rt = mockup_rt({ amount: 5, created_at: Date.today-1 })
-    @account.recurrings.all.count.should == 1
 
     @account.balance.to_f.should == 0
 
@@ -135,7 +133,7 @@ describe "Recurring Transactions" do
         frequency: :monthly,
         account:    @account,
         created_at: Date.today - 1,
-        recurs_on_day: Time.now.day
+        monthly_days: [ Time.now.day ]
       })
 
       rt.due?.should be_true
@@ -151,7 +149,9 @@ describe "Recurring Transactions" do
         flow_type: :negative,
         frequency: :yearly,
         created_at: Date.today - 1,
-        account: @account
+        account: @account,
+        yearly_day: Date.today.day,
+        yearly_months: [ Date.today.month ]
       })
 
       rt.due?.should be_true
@@ -254,8 +254,8 @@ describe "Recurring Transactions" do
       before :each do
         t = valid! fixture(:recurring, {
           frequency: :yearly,
-          recurs_on_month: 5,
-          recurs_on_day: 12
+          yearly_months: [5],
+          yearly_day: 12
         })
       end
 
@@ -296,7 +296,7 @@ describe "Recurring Transactions" do
       before :each do
         t = valid! fixture(:recurring, {
           frequency: :monthly,
-          recurs_on_day: 3
+          monthly_days: [3]
         })
       end
 
@@ -373,7 +373,7 @@ describe "Recurring Transactions" do
       t.all_occurrences.length.should == 7
 
       t.update!({ created_at: 1.month.ago })
-      t.all_occurrences.length.should == Time.days_in_month(Time.now.month)
+      t.all_occurrences.length.should == Time.days_in_month(1.month.ago.month, 1.month.ago.year)
 
       t.update!({ created_at: 1.month.from_now })
       t.all_occurrences.length.should == 0
@@ -386,6 +386,7 @@ describe "Recurring Transactions" do
     it ':monthly' do
       t = valid! fixture(:recurring, {
         frequency: :monthly,
+        monthly_days: [ Time.now.day ],
         created_at: 1.year.ago
       })
 
@@ -405,6 +406,8 @@ describe "Recurring Transactions" do
     it ':yearly' do
       t = valid! fixture(:recurring, {
         frequency: :yearly,
+        yearly_day: Time.now.day,
+        yearly_months: [ Time.now.month ],
         created_at: 10.year.ago
       })
 
@@ -418,6 +421,42 @@ describe "Recurring Transactions" do
 
       t.update!({ created_at: 1.month.from_now })
       t.all_occurrences.length.should == 0
+    end
+  end
+
+
+  context 'multiple occurrences' do
+    it ':monthly' do
+      t = valid! fixture(:recurring, {
+        frequency: :monthly,
+        monthly_days: [ Time.now.day ],
+        created_at: 1.year.ago
+      })
+
+      t.all_occurrences.length.should == 12
+
+      t.update!({ created_at: 1.month.ago })
+      t.all_occurrences.length.should == 1
+
+      t.update!({ created_at: 1.week.ago })
+      t.all_occurrences.length.should == 1
+
+      t.update!({ created_at: 1.month.from_now })
+      t.all_occurrences.length.should == 0
+    end
+
+    it ':yearly' do
+      t = valid! fixture(:recurring, {
+        frequency: :yearly,
+        yearly_day: Time.now.day,
+        yearly_months: [ 3, 9 ],
+        created_at: 1.year.ago
+      })
+
+      t.all_occurrences.length.should == 2
+
+      t.update!({ created_at: 0.years.ago.beginning_of_year + 4.months })
+      t.all_occurrences.length.should == 1
     end
   end
 end

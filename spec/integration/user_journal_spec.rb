@@ -10,19 +10,19 @@ feature "Journaling" do
   end
 
   it "doing nothing" do
-    rc = api_call post "/users/#{@user.id}/journal", { records: [] }
+    rc = api_call post "/users/#{@user.id}/journals", { records: [] }
     rc.should succeed
   end
 
   context "Validation" do
     it "bad records" do
-      rc = api_call post "/users/#{@user.id}/journal", { records: 123 }
+      rc = api_call post "/users/#{@user.id}/journals", { records: 123 }
       rc.should fail(400, "Record listing must be of type Array")
 
-      rc = api_call post "/users/#{@user.id}/journal", { records: {} }
+      rc = api_call post "/users/#{@user.id}/journals", { records: {} }
       rc.should fail(400, "Record listing must be of type Array")
 
-      rc = api_call post "/users/#{@user.id}/journal", { records: true }
+      rc = api_call post "/users/#{@user.id}/journals", { records: true }
       rc.should fail(400, "Record listing must be of type Array")
     end
 
@@ -35,7 +35,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, "Unknown scope")
     end
 
@@ -48,7 +48,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, "No such resource")
     end
 
@@ -61,7 +61,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, "No such collection")
     end
 
@@ -75,7 +75,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, ".*")
 
       data = {
@@ -87,7 +87,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, ".*")
     end
 
@@ -103,7 +103,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, "Unrecognized operation")
     end
 
@@ -120,7 +120,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, "Missing required")
 
       data = {
@@ -134,7 +134,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, ".*")
 
       data = {
@@ -151,7 +151,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should fail(400, ".*")
     end
 
@@ -175,7 +175,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     @account = @account.refresh
     @account.transactions.count.should == 1
@@ -201,7 +201,7 @@ feature "Journaling" do
     }
 
     nr_categories = @user.categories.length
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     @user.refresh.categories.length.should == nr_categories+1
   end
@@ -230,7 +230,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     rc.body["journal"]["processed"]["account"][@account.id.to_s]["transactions"]["create"].length.should == 2
     rc.body["journal"]["shadowmap"]["account"][@account.id.to_s]["transactions"].length.should == 2
@@ -271,7 +271,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     puts rc.body
     rc.body["journal"]["processed"]["account"][account1.id.to_s]["transactions"]["create"].length.should == 1
@@ -303,7 +303,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should fail(400, 'Duplicate shadow resource')
   end
 
@@ -333,7 +333,7 @@ feature "Journaling" do
 
     count = @account.refresh.transactions.count
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     @account.refresh.transactions.count.should == count + 1
     @account.refresh.transactions.first.amount.should == 456
@@ -356,7 +356,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     rc.body["journal"]["processed"]["account"][@account.id.to_s]["transactions"]["update"].length.should == 1
     @transaction.refresh.amount.to_i.should == 10
@@ -386,7 +386,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     rc.body["journal"]["processed"]["account"][@account.id.to_s]["transactions"]["create"].length.should == 1
     rc.body["journal"]["processed"]["account"][@account.id.to_s]["transactions"]["update"].length.should == 1
@@ -409,7 +409,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     @account.refresh.transactions.count.should == 0
   end
@@ -428,7 +428,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     rc.body["journal"]["processed"].should be_empty
     rc.body["journal"]["dropped"].length.should == 1
@@ -454,7 +454,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     rc.body["journal"]["processed"].length.should == 1
     rc.body["journal"]["dropped"].length.should == 1
@@ -480,7 +480,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["user"][@user.id.to_s]["accounts"]["update"].length.should == 1
         @account.refresh.currency.should == 'EUR'
@@ -505,7 +505,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["user"][@user.id.to_s]["payment_methods"]["create"].length.should == 1
       end
@@ -529,7 +529,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["user"][@user.id.to_s]["payment_methods"]["update"].length.should == 1
         pm.refresh.name.should == 'Adooken3'
@@ -551,7 +551,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["user"][@user.id.to_s]["payment_methods"]["delete"].length.should == 1
         pm.refresh.should be_false
@@ -581,7 +581,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["user"][@user.id.to_s]["categories"]["create"].length.should == 1
       end
@@ -606,7 +606,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["user"][@user.id.to_s]["categories"]["update"].length.should == 1
         c.refresh.name.should == name
@@ -628,7 +628,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["user"][@user.id.to_s]["categories"]["delete"].length.should == 1
         c.refresh.should be_false
@@ -650,14 +650,14 @@ feature "Journaling" do
                   flow_type: "positive",
                   amount: 5,
                   frequency: "monthly",
-                  recurs_on_day: 5
+                  monthly_days: [5]
                 }
               }]
             }
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["account"][@account.id.to_s]["recurrings"]["create"].length.should == 1
       end
@@ -681,7 +681,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["account"][@account.id.to_s]["recurrings"]["update"].length.should == 1
         rtx.refresh.note.should == 'Booyah'
@@ -703,7 +703,7 @@ feature "Journaling" do
           }]
         }
 
-        rc = api_call post "/users/#{@user.id}/journal", data
+        rc = api_call post "/users/#{@user.id}/journals", data
         rc.should succeed
         rc.body["journal"]["processed"]["account"][@account.id.to_s]["recurrings"]["delete"].length.should == 1
         rtx.refresh.should be_false
@@ -729,7 +729,7 @@ feature "Journaling" do
         }]
       }
 
-      rc = api_call post "/users/#{@user.id}/journal", data
+      rc = api_call post "/users/#{@user.id}/journals", data
       rc.should succeed
       puts rc.body
       rc.body["journal"]["processed"]["user"][@user.id.to_s]["users"]["update"].length.should == 1
@@ -795,7 +795,7 @@ feature "Journaling" do
       }]
     }
 
-    rc = api_call post "/users/#{@user.id}/journal", data
+    rc = api_call post "/users/#{@user.id}/journals", data
     rc.should succeed
     puts rc.body
 
