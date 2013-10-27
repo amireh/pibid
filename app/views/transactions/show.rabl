@@ -13,6 +13,7 @@ node(:categories) { |tx|
   tx.categories.map { |c| c.id }
 }
 node(:payment_method_id) { |tx| tx.payment_method_id }
+node(:recurring_id) { |tx| tx.recurring_id }
 
 # node(:categories) { |tx|
 #   tx.categories.map { |c| c.id }

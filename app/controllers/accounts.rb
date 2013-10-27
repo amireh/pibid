@@ -20,6 +20,7 @@ helpers do
 
   def user_accounts_update(account, p = params)
     api_optional!({
+      label: nil,
       currency: lambda { |iso|
         unless Currency[(iso || '').to_s]
           return "Unrecognized currency ISO code."

@@ -125,7 +125,52 @@ get '/users/:user_id/transactions',
 
   @transactions.flatten!
 
-  puts @transactions.to_json
+  respond_with @transactions do |f|
+    f.json { rabl :"transactions/index", collection: @transactions }
+  end
+end
+
+get '/accounts/:account_id/transactions',
+  auth: [ :user ],
+  requires: [ :account ],
+  provides: [ :json ] do
+
+  api_required!({
+    from: lambda { |date|
+      unless @from = parse_date(date)
+        return 'Invalid :from date, expected format: MM/DD/YYYY'
+      end
+    },
+    to: lambda { |date|
+      unless @to = parse_date(date)
+        return 'Invalid :to date, expected format: MM/DD/YYYY'
+      end
+    }
+  })
+
+  api_optional!({
+    type: lambda { |type|
+      unless type && [ 'withdrawal', 'deposit' ].include?(type)
+        return 'Invalid :type, must be one of :withdrawal or :deposit'
+      end
+    }
+  })
+
+  options = {}
+
+  api_consume!(:type) do |v|
+    options[:type] = case v
+    when 'withdrawal'
+      Withdrawal
+    when 'deposit'
+      Deposit
+    end
+  end
+
+  @transactions = @account.transactions_in({
+    begin: @from,
+    end: @to
+  }, options)
 
   respond_with @transactions do |f|
     f.json { rabl :"transactions/index", collection: @transactions }

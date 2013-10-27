@@ -7,6 +7,8 @@ helpers do
 
   # expected format: "MM/DD/YYYY"
   def parse_date(date_string)
+    date_string ||= ''
+
     unless date_string =~ /(\d{1,2})\/(\d{1,2})\/(\d{4,})/
       return false
     end
