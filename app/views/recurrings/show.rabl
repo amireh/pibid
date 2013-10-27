@@ -1,5 +1,6 @@
+object @transaction => ''
 extends "recurrings/_show"
 
-node(:occurences) do |t|
-  t.schedule.all_occurrences
-end
+node(:occurrences) { |tx|
+  tx.schedule.occurrences(Time.now.end_of_year)
+}

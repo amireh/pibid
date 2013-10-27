@@ -186,6 +186,9 @@ module Sinatra
 
         if !h.has_key?(name)
           if type == :required
+            if settings.development?
+              puts "API parameters: #{h.inspect}"
+            end
             halt 400, "Missing required parameter :#{name}"
           end
         else

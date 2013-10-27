@@ -26,7 +26,7 @@ describe "Accounts" do
       note: "Salary",
       flow_type: "positive",
       frequency: "monthly",
-      recurs_on_day: 18
+      monthly_days: [18]
     }
     rc.should succeed
     @a = @a.refresh
@@ -37,8 +37,8 @@ describe "Accounts" do
       note: "Salary",
       flow_type: "positive",
       frequency: "yearly",
-      recurs_on_day: 18,
-      recurs_on_month: 7
+      yearly_day: 18,
+      yearly_months: [7]
     }
     rc.should succeed
     @a = @a.refresh

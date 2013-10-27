@@ -2,8 +2,7 @@ source 'https://rubygems.org'
 
 gem 'rack-protection',
   :git => 'https://github.com/rkh/rack-protection'
-gem 'sinatra', '>=1.4.0',
-  :git => 'https://github.com/sinatra/sinatra'
+gem 'sinatra', '=1.4.0'
 gem 'sinatra-contrib',
   :git => 'https://github.com/sinatra/sinatra-contrib',
   :require => [ 'sinatra/config_file', 'sinatra/respond_with' ]
@@ -40,8 +39,7 @@ gem 'activesupport', '>= 4.0.0', :require => [
   'active_support/time'
 ]
 gem 'ice_cube', '=0.10.1'
-# gem 'puma'
-gem 'unicorn'
+gem 'puma'
 gem 'pibi',
   :git => 'https://amireh@github.com/amireh/pibi.rb.git',
   :branch => 'master'
@@ -63,4 +61,8 @@ end
 gem 'tzinfo'
 gem 'money-open-exchange-rates'
 gem 'rake'
-gem 'newrelic_rpm', :require => 'newrelic_rpm'
+
+group :production do
+  gem 'newrelic_rpm', :require => 'newrelic_rpm'
+  gem 'unicorn'
+end
