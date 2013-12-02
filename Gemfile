@@ -1,7 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'rack-protection',
-  :git => 'https://github.com/rkh/rack-protection'
+gem 'rack-protection', '=1.5.1'
 gem 'sinatra', '=1.4.0'
 gem 'sinatra-contrib',
   :git => 'https://github.com/sinatra/sinatra-contrib',
@@ -66,3 +65,6 @@ group :production do
   gem 'newrelic_rpm', :require => 'newrelic_rpm'
   gem 'unicorn'
 end
+
+gem 'sinatra-api'
+gem 'ruby-progressbar'
