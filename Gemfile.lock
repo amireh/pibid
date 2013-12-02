@@ -16,13 +16,6 @@ GIT
       uuid
 
 GIT
-  remote: https://github.com/rkh/rack-protection
-  revision: 0c0f79f86db2600425121c6498b3626c2d5b6817
-  specs:
-    rack-protection (1.5.1)
-      rack
-
-GIT
   remote: https://github.com/sinatra/sinatra-contrib
   revision: 7f1c651f32e831196b03e8273824f876c6f1e1f5
   specs:
@@ -33,6 +26,14 @@ GIT
       rack-test
       sinatra (~> 1.4.0)
       tilt (~> 1.3)
+
+PATH
+  remote: /home/kandie/Workspace/Projects/sinatra-api
+  specs:
+    sinatra-api (1.1.7)
+      activesupport
+      json
+      sinatra
 
 GEM
   remote: https://rubygems.org/
@@ -137,6 +138,8 @@ GEM
     rabl (0.9.0)
       activesupport (>= 2.3.14)
     rack (1.5.2)
+    rack-protection (1.5.1)
+      rack
     rack-test (0.6.2)
       rack (>= 1.0)
     raindrops (0.12.0)
@@ -149,6 +152,7 @@ GEM
     rspec-expectations (2.14.3)
       diff-lcs (>= 1.1.3, < 2.0)
     rspec-mocks (2.14.4)
+    ruby-progressbar (1.2.0)
     simplecov (0.7.1)
       multi_json (~> 1.0)
       simplecov-html (~> 0.7.1)
@@ -208,12 +212,14 @@ DEPENDENCIES
   pibi!
   puma
   rabl
-  rack-protection!
+  rack-protection (= 1.5.1)
   rake
   rspec
   rspec-core
+  ruby-progressbar
   simplecov
   sinatra (= 1.4.0)
+  sinatra-api!
   sinatra-can
   sinatra-contrib!
   sinatra-cross_origin!

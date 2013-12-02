@@ -164,4 +164,95 @@ namespace :pibi do
       end
     end
   end
+
+  desc 'remove duplicate transactions'
+  task :remove_duplicate_transactions => :environment do
+    require 'ruby-progressbar'
+
+    erratic = []
+    skip = []
+    puts "Looking up erratic transactions..."
+
+    transactions = Transaction.all({
+      conditions: {
+        :created_at.gte => 1.week.ago
+      },
+      order: [ :created_at.asc ]
+    })
+
+    progress_bar = ProgressBar.create({
+      title: 'Transactions',
+      total: transactions.length,
+      format: '%t %E [%B] %p%%'
+    })
+
+    transactions.each_with_index do |tx, idx|
+      next if skip.include?(tx.id)
+
+      progress_bar.increment
+
+      # duplicates = transactions.select do |rhs|
+      #   rhs.id != tx.id &&
+      #   rhs.amount == tx.amount &&
+      #   rhs.currency == tx.currency &&
+      #   rhs.occured_on == tx.occured_on &&
+      #   rhs.note == tx.note
+      # end
+      duplicates = Transaction.all({
+        :id.not => tx.id,
+        :amount => tx.amount,
+        :currency => tx.currency,
+        :occured_on => tx.occured_on,
+        :note => tx.note
+      })
+
+      duplicates = duplicates.map(&:id)
+
+      unless duplicates.empty?
+        skip += duplicates
+        # transactions.delete_if { |rhs| duplicates.include?(rhs.id) }
+        erratic << { transaction: tx, duplicate_ids: duplicates }
+      end
+    end
+
+    progress_bar.finish
+
+    puts "There are #{erratic.length} erratic transactions."
+
+    puts "First erratic transaction was committed at: #{erratic.first[:transaction].created_at.strftime('%D')}"
+    puts "Last erratic transaction was committed at: #{erratic.last[:transaction].created_at.strftime('%D')}"
+
+    all_duplicates = erratic.map { |entry| entry[:duplicate_ids] }.flatten
+
+    progress_bar = ProgressBar.create({
+      title: 'Destroying...',
+      total: all_duplicates.length,
+      format: '%t %E [%B] %p%%'
+    })
+
+    erratic.each_with_index do |entry, idx|
+      puts "#{idx} --"
+      tx = entry[:transaction].reload
+      duplicate_ids = entry[:duplicate_ids]
+
+      puts "\tUser: #{tx.account.user.email}"
+      puts "\t[#{tx.id}] #{tx.created_at.strftime('%D')} -> #{tx.occured_on.strftime('%D')}"
+      puts "\t#{duplicate_ids.length} duplicates: #{duplicate_ids.join(', ')}"
+
+      duplicate_ids.each do |duplicate_id|
+        duplicate = Transaction.get(duplicate_id)
+
+        begin
+          duplicate.destroy
+        rescue Exception => e
+          puts "Transaction #{duplicate_id} failed to destroy: #{e.message}"
+        end
+
+        progress_bar.increment
+      end
+    end
+
+    puts "Duplicate IDs:"
+    puts all_duplicates.inspect
+  end
 end
