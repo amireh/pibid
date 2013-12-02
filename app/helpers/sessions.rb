@@ -7,6 +7,12 @@ module Sinatra
         if u = authenticate(@auth.credentials.first, @auth.credentials.last)
           authorize(u)
         end
+      elsif digest = request.env['HTTP_X_ACCESS_TOKEN']
+        unless @access_token = AccessToken.first({ digest: digest })
+          halt 401
+        end
+
+        authorize(@access_token.user)
       end
 
       !current_user.nil?
