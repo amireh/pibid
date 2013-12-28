@@ -243,6 +243,7 @@ def invalid!(r)
 end
 
 def valid!(r)
+  r.nil?.should be_false
   r.all_errors.should == []
   r.saved?.should be_true
   r

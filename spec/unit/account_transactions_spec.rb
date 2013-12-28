@@ -1,5 +1,19 @@
 describe "Account Transactions" do
 
+  before(:all) do
+    @rates = {
+      JOD: Currency['JOD'].rate
+    }
+
+    Currency['JOD'].update!({ rate: 0.7 })
+  end
+
+  after(:all) do
+    @rates.each_pair do |k,v|
+      Currency[k].update!({ rate: v })
+    end
+  end
+
   before do
     mockup_user
   end

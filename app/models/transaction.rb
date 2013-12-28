@@ -33,6 +33,7 @@ class Transaction
   belongs_to :recurring, required: false
 
   has n, :categories, :through => Resource, :constraint => :skip
+  belongs_to :spouse, Transaction, required: false, child_key: :spouse_id
 
   is :journallable
 
@@ -142,6 +143,10 @@ class Transaction
   end
 
   def add_to_account(amt)
+  end
+
+  def transfer?
+    !spouse.nil?
   end
 
   protected

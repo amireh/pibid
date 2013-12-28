@@ -31,9 +31,40 @@ helpers do
       }
     }, p)
 
+    api_optional!({
+      to: lambda { |account_id|
+        unless @to = account.user.accounts.get(account_id)
+          return "No such account ##{account_id}"
+        end
+      }
+    }, p)
+
+    api_consume!(:to)
+
     collection = account.send(api_consume!(:type).to_s.to_plural)
 
-    account_transactions_build(collection.new, account, p)
+    tx = account_transactions_build(collection.new, account, p)
+
+    if @to
+      target = {
+        currency: Currency[tx.currency]
+      }
+
+      collection = tx.is_a?(Deposit) ? @to.withdrawals : @to.deposits
+      spouse = collection.create({
+        amount: target[:currency].from(tx.currency, tx.amount),
+        currency: target[:currency].name,
+        payment_method_id: tx.payment_method_id,
+        spouse_id: tx.id
+      })
+
+      if spouse.saved?
+        tx.spouse = spouse
+        tx.save!
+      end
+    end
+
+    tx
   end
 
   def account_transactions_update(transaction, p = params)
@@ -41,7 +72,16 @@ helpers do
       amount: nil
     }, p)
 
-    account_transactions_build(transaction, transaction.collection.account, p)
+    tx = account_transactions_build(transaction, transaction.collection.account, p)
+
+    if tx.transfer?
+      spouse = tx.spouse
+      spouse.update({
+        amount: Currency[spouse.currency].from(tx.currency, tx.amount)
+      })
+    end
+
+    tx
   end
 
   def account_transactions_build(transaction, account, p = params)
@@ -88,8 +128,14 @@ helpers do
   end
 
   def account_transactions_delete(transaction, p = params)
+    spouse = transaction.spouse
+
     unless transaction.destroy
       halt 400, transaction.errors
+    end
+
+    if spouse
+      spouse.destroy
     end
 
     true
