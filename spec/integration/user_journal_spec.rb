@@ -42,7 +42,7 @@ feature "Journaling" do
     it "bad scope identifier" do
       data = {
         records: [{
-          collection: 'hello',
+          collection: 'accounts',
           scope: 'user',
           scope_id: 'asdf'
         }]

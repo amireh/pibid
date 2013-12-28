@@ -12,6 +12,6 @@ describe Account do
     @a.update!({ balance: 10.0 })
     @c = some_currency
     @a.update({ currency: @c.name })
-    @a.refresh.balance.should == @c.from("USD", 10.0)
+    @a.refresh.balance.to_f.should == @c.from("USD", 10.0)
   end
 end
