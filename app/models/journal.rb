@@ -537,9 +537,23 @@ class Journal
   end
 
   def process_delete(record)
-    model = @ctx.collection.get(record['id'])
+    resource = @ctx.collection.get(record['id'])
+    factory = factory_for(current_collection_fqid, :delete)
+    status = nil
 
-    if status = model && model.destroy
+    if resource
+      if factory
+        rc, err = catch :halt do
+          (@callbacks[:on_process] || []).map(&:call)
+          status = factory.call(resource)
+          nil
+        end
+      else
+        status = resource && resource.destroy
+      end
+    end
+
+    if status
       # delete any create or update records that are operating on this resource
 
       [ @ctx.operations['create'], @ctx.operations['update'] ].each_with_index do |sibling_records, op_idx|
@@ -556,7 +570,7 @@ class Journal
 
       mark_processed :delete, record
     else
-      mark_dropped :delete, record, (model && model.errors)
+      mark_dropped :delete, record, (resource && resource.errors)
     end
 
     status
