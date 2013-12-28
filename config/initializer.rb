@@ -14,6 +14,7 @@ configure do |app|
 
   set :views, File.join($ROOT, 'app', 'views')
 
+  require "config/initializers/api"
   require "config/initializers/datamapper"
   require "config/initializers/rabl"
   require "config/initializers/omniauth"

@@ -27,14 +27,6 @@ GIT
       sinatra (~> 1.4.0)
       tilt (~> 1.3)
 
-PATH
-  remote: /home/kandie/Workspace/Projects/sinatra-api
-  specs:
-    sinatra-api (1.1.7)
-      activesupport
-      json
-      sinatra
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -161,6 +153,10 @@ GEM
       rack (~> 1.5, >= 1.5.2)
       rack-protection (~> 1.4)
       tilt (~> 1.3, >= 1.3.4)
+    sinatra-api (1.1.7)
+      activesupport
+      json
+      sinatra
     sinatra-can (0.2)
       cancan (>= 1.6.0)
       sinatra (>= 1.0.0)
@@ -219,7 +215,7 @@ DEPENDENCIES
   ruby-progressbar
   simplecov
   sinatra (= 1.4.0)
-  sinatra-api!
+  sinatra-api
   sinatra-can
   sinatra-contrib!
   sinatra-cross_origin!
