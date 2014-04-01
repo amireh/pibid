@@ -1,4 +1,5 @@
 development: &common
+  upload_path: public/uploads
   default_categories: [
     'Bills',
     'Car',
@@ -30,3 +31,4 @@ production:
 
 test:
   <<: *common
+  upload_path: tmp/uploads

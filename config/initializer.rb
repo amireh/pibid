@@ -11,6 +11,7 @@ configure do |app|
   }
 
   User.default_categories = settings.default_categories
+  Attachment.upload_path = settings.upload_path
 
   set :views, File.join($ROOT, 'app', 'views')
 

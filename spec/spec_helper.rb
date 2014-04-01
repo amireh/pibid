@@ -57,6 +57,10 @@ RSpec.configure do |config|
     Sinatra::Application.any_instance
   end
 
+  def file_fixture(filename)
+    File.expand_path(File.dirname(__FILE__) + '/fixtures/' + filename)
+  end
+
   config.append_before(:each) do
     header "Accept", "application/json"
     header "Content-Type", "application/json"

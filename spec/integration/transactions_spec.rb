@@ -176,4 +176,15 @@ describe "Transactions" do
     @account.refresh.deposits.count.should == 0
   end
 
+  scenario 'uploading an attachment' do
+    @tx = valid! fixture(:deposit)
+    file = Rack::Test::UploadedFile.new(file_fixture('attachment0.txt'), 'text/plain')
+    header "Content-Type", "multipart/form-data"
+
+    rc = api_call post "/transactions/#{@tx.id}/attachments", {
+      file: file
+    }
+    rc.should succeed
+  end
+
 end
