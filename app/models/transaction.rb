@@ -33,6 +33,7 @@ class Transaction
   belongs_to :recurring, required: false
 
   has n, :categories, :through => Resource, :constraint => :skip
+  has n, :attachments, :constraint => :destroy
   belongs_to :spouse, Transaction, required: false, child_key: :spouse_id
 
   is :journallable
@@ -41,7 +42,11 @@ class Transaction
     CategoryTransaction.all({ transaction_id: self.id }).destroy
   end
 
-  def url
+  def url(root = false)
+    if root
+      return "/transactions/#{id}"
+    end
+
     "#{self.account.url(true)}/transactions/#{id}"
   end
 

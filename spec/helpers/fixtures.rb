@@ -20,7 +20,11 @@ module Fixtures
     end
 
     def teardown
-      User.destroy.should == true
+      User.all.each do |u|
+        u.destroy
+        u.errors.to_json.should == "{}"
+      end
+
       [
         User,
         Account,
