@@ -34,6 +34,7 @@ class Recurring < Transaction
     self.weekly_days = [ self.weekly_days ] unless self.weekly_days.is_a?(Array)
     self.monthly_days = [ self.monthly_days ] unless self.monthly_days.is_a?(Array)
     self.yearly_months = [ self.yearly_months ] unless self.yearly_months.is_a?(Array)
+    self.every = 1 if self.every.to_i < 1
 
     [ :weekly_days, :monthly_days, :yearly_months ].each do |arrkey|
       self[arrkey].reject! { |v| !v }
