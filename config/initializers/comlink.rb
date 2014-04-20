@@ -14,9 +14,12 @@ end
 
 configure do |app|
   puts ">> Launching AMQP Comlink..."
-  set :comlink, Pibi::AMQP::Producer.new(app.amqp, true)
-
-  at_exit do
-    app.comlink.stop
+  begin
+    set :comlink, Pibi::AMQP::Producer.new(app.amqp, true)
+    at_exit do
+      app.comlink.stop
+    end
+  rescue
+    puts "[error] Unable to launch AMQP comlink, messaging will be disabled."
   end
 end
