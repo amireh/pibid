@@ -21,3 +21,4 @@ bin
 coverage
 .yardoc
 doc/api
+/public/uploads
