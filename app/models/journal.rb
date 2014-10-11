@@ -1,3 +1,6 @@
+require 'app/models/user'
+require 'app/models/account'
+
 class Journal
   include DataMapper::Resource
 
