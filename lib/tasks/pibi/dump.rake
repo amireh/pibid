@@ -28,10 +28,17 @@ namespace :pibi do
       end
     end
 
+    user_ids = ENV['USER_IDS']
     path = ENV['OUT'] || "#{$ROOT}/dumps/#{Time.now.strftime("%Y.%m.%d")}"
     writer = Writer.new(path)
 
-    users = User.all.map do |user|
+    users = if user_ids
+      User.all(id: user_ids)
+    else
+      User.all
+    end
+
+    users.map do |user|
       pluck user, %w[
         id name provider uid password email email_verified
         settings auto_password created_at link_id
@@ -40,31 +47,31 @@ namespace :pibi do
 
     writer.save(users, 'users')
 
-    accounts = Account.all.map do |resource|
+    accounts = users.map(&:accounts).flatten.map do |resource|
       pluck resource, %w[ id label balance currency created_at user_id ]
     end
 
     writer.save(accounts, 'accounts')
 
-    categories = Category.all.map do |resource|
+    categories = users.map(&:categories).flatten.map do |resource|
       pluck resource, %w[ id name icon user_id]
     end
 
     writer.save(categories, 'categories')
 
-    notices = Notice.all.map do |resource|
+    notices = users.map(&:notices).flatten.map do |resource|
       pluck resource, %w[ id salt data created_at accepted_at type status user_id ]
     end
 
     writer.save(notices, 'notices')
 
-    payment_methods = PaymentMethod.all.map do |resource|
+    payment_methods = users.map(&:payment_methods).flatten.map do |resource|
       pluck resource, %w[ id name default color user_id ]
     end
 
     writer.save(payment_methods, 'payment_methods')
 
-    recurrings = Recurring.all.map do |resource|
+    recurrings = users.map(&:accounts).flatten.map(&:recurrings).flatten.map do |resource|
       pluck resource, %w[
         id
         amount
@@ -87,7 +94,7 @@ namespace :pibi do
 
     writer.save(recurrings, 'recurrings')
 
-    transactions = Transaction.all.map do |resource|
+    transactions = users.map(&:accounts).flatten.map(&:transactions).flatten.map do |resource|
       pluck resource, %w[
         id
         amount
@@ -104,8 +111,16 @@ namespace :pibi do
 
     writer.save(transactions, 'transactions')
 
-    category_transactions = CategoryTransaction.all.map do |resource|
-      pluck resource, %w[ category_id transaction_id ]
+    category_transactions = if user_ids
+      transactions.map do |transaction|
+        CategoryTransaction.all(transaction_id: transaction[:id]).map do |ct|
+          pluck ct, %w[ category_id transaction_id ]
+        end
+      end.flatten
+    else
+      CategoryTransaction.all.map do |resource|
+        pluck resource, %w[ category_id transaction_id ]
+      end
     end
 
     writer.save(category_transactions, 'category_transactions')
