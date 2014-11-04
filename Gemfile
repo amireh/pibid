@@ -66,5 +66,5 @@ group :production do
   gem 'unicorn'
 end
 
-gem 'sinatra-api'
+gem 'sinatra-api', '1.1.8'
 gem 'ruby-progressbar'
