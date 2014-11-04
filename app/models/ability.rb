@@ -14,10 +14,6 @@ ability do |user|
   can :access, Transaction do |tx|
     can? :access, tx.account
   end
-  can :access, Attachment do |attachment|
-    can? :access, attachment.transaction
-  end
-
 end
 
 user do current_user end

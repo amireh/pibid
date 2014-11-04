@@ -1,6 +1,5 @@
 development: &common
   allowed_origin: 'https://www.pibiapp.com'
-  upload_path: public/uploads
   default_categories: [
     'Bills',
     'Car',
